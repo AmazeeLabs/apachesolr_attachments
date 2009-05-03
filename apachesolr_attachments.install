@@ -6,8 +6,6 @@
  */
 function apachesolr_attachments_install() {
   drupal_install_schema('apachesolr_attachments');
-  // Module weights: put after apachesolr_search.
-  db_query("UPDATE {system} SET weight = 10 WHERE name = 'apachesolr_attachments'");
 } 
 
 /**
@@ -19,11 +17,30 @@ function apachesolr_attachments_uninstall() {
 }
 
 /**
- * hook_requirements()..
+ * hook_requirements().
  */
-function apachesolr_attachments_requirements() {
-  $t = tempnam(file_directory_temp(), 'asa');
-  return array();
+function apachesolr_attachments_requirements($phase) {
+
+  $requirements = array();
+  // Ensure translations don't break at install time
+  $t = get_t();
+  if ($phase == 'install') {
+    $temp = tempnam(file_directory_temp(), 'asa');
+    $java = variable_get('apachesolr_attachments_java', 'java');
+    exec($java .' -version > '. $temp .' 2>&1');
+    $stderror = file_get_contents($temp);
+    $found = preg_match('/Java.+Runtime Environment/', $stderror);
+
+    if (!$found) {
+      $requirements['apachesolr_attachments_java']  = array(
+        'title' => $t('Java executable not found'),
+        'description' => $t('Could not execute a java command.  You may need to set the path of the correct java executable as the variable \'apachesolr_attachments_java\' in settings.php.'),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+  }
+
+  return $requirements;
 }
 
 function apachesolr_attachments_schema() {
