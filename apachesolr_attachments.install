@@ -14,6 +14,7 @@ function apachesolr_attachments_install() {
 function apachesolr_attachments_uninstall() {
   variable_del('apachesolr_attachment_tika_path');
   apachesolr_clear_last_index('apachesolr_attachments');
+  drupal_uninstall_schema('apachesolr_attachments');
 }
 
 /**

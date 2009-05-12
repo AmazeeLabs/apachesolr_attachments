@@ -237,7 +237,7 @@ function apachesolr_attachments_apachesolr_process_results(&$results) {
   foreach ($results as &$item) {
     if (isset($item['node']->ss_filemime)) {
       $nid = $item['node']->nid;
-      $item['link'] = file_create_url($item['path']);
+      $item['link'] = file_create_url($item['node']->path);
       $node_link = t('<em>attached to:</em> !node_link', array('!node_link' => l($item['node']->ss_file_node_title, 'node/'. $nid)));
       $icon = theme('filefield_icon', array('filemime' => $item['node']->ss_filemime));
       $file_type = t('!icon @filemime', array('@filemime' => $item['node']->ss_filemime, '!icon' => $icon));
