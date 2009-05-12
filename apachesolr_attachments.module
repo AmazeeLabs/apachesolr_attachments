@@ -84,10 +84,13 @@ function apachesolr_attachments_update_index() {
   if(!variable_get('apachesolr_attachments_tika_path', '')) {
     return;
   }
-
-  $cron_limit = variable_get('apachesolr_cron_limit', 50);
-  $result = apachesolr_get_nodes_to_index('apachesolr_attachments', $cron_limit);
-  apachesolr_index_nodes($result,  'apachesolr_attachments', 'apachesolr_attachments_add_documents');
+  $start = time();
+  $cron_limit = variable_get('apachesolr_attachements_cron_try', 10);
+  $cron_time_limit = variable_get('apachesolr_attachements_cron_time_limit', 15);
+  do {
+    $result = apachesolr_get_nodes_to_index('apachesolr_attachments', $cron_limit);
+    apachesolr_index_nodes($result,  'apachesolr_attachments', 'apachesolr_attachments_add_documents');
+  } while ((time() - $start) < $cron_time_limit);
 }
 
 /**
