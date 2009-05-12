@@ -159,6 +159,9 @@ function apachesolr_attachments_add_documents(&$documents, $nid) {
 
         $documents[] = $document;
       }
+      else {
+        watchdog('Apache Solr Attachments', t('Could not extract any indexable text from %filepath'), array('%filepath' => $file->filepath), WATCHDOG_WARNING);
+      }
     }
   }
 }
