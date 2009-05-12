@@ -124,10 +124,10 @@ function apachesolr_attachments_add_documents(&$documents, $nid) {
       db_query("INSERT INTO {apachesolr_attachments_files} (fid, nid, removed) VALUES (%d, %d, 0)", $file->fid, $node->nid);
     }
     foreach ($files as $file) {
-      $text = _asa_get_attachment_text($file);file_put_contents('/tmp/before.txt', $text, FILE_APPEND);
+      $text = _asa_get_attachment_text($file);
        // Strip bad control characters. Do we need to make a hook for text cleanup?
       $text = iconv("UTF-8", "UTF-8//IGNORE", $text);
-      $text = trim(apachesolr_clean_text($text));file_put_contents('/tmp/after.txt', $text, FILE_APPEND);
+      $text = trim(apachesolr_clean_text($text));
 
       if ($text) {
         $document = new Apache_Solr_Document();
