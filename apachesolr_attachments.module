@@ -223,7 +223,7 @@ function apachesolr_attachments_cron() {
 function apachesolr_attachments_apachesolr_modify_query(&$query, &$params, $caller) {
   // Fetch the extra file data on searches.
   if ($caller == 'apachesolr_search') {
-    $params['fl'] .= ',path,ss_filemime,ss_file_node_title,ss_file_node_url';
+    $params['fl'] .= ',ss_filemime,ss_file_node_title,ss_file_node_url';
   }
   elseif ($caller == 'apachesolr_mlt') {
     // Exclude files from MLT results.
