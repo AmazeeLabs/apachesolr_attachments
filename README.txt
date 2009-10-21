@@ -14,15 +14,28 @@ up to date.  In particular, https://issues.apache.org/jira/browse/TIKA-152
 is committed, so it does currently support MS Office 2007 documents to 
 some reasonable degee.
 
-The easiest-to-find pre-built tika is likely a Solr nightly such as:
+The easiest-to-find pre-built tika 0.3 is to check out a version of Solr trunk
+from around March 2009 such as:
 
-http://people.apache.org/builds/lucene/solr/nightly
+svn co -r779609 http://svn.apache.org/repos/asf/lucene/solr/trunk/contrib/extraction/lib tika-0.3
 
-Tika is located here at apachesolr-nightly/example/solr/lib.  You can copy/move
-directory to somewhere convenient, though it's probably a good idea
+You can copy/move directory to somewhere convenient, though it's probably a good idea
 to keep it outside your doocroot.
 
-If you have svn, you can get the same by doing svn checkout or export from:
+While Solr now uses tika 0.4, it no longer lncludes the command-line extraction
+application.
 
-http://svn.apache.org/repos/asf/lucene/solr/trunk/contrib/extraction/lib/
+You will likely need to built tika from source using maven (mvn).  Get the tika
+source from:
+http://lucene.apache.org/tika/download.html
 
+You may need to increase the memory for java/mvn using (for example):
+export MAVEN_OPTS="-Xmx1024m -Xms512m"
+
+mvn install
+
+will build the full set of tika applications - it will install the app jar
+in a location like ~/.m2/repository/org/apache/tika/tika-app/0.4/
+Copy tika-app-0.4.jar from there or point the module path to it.
+
+See also build instructions at: http://drupal.org/node/540974#comment-1944082
