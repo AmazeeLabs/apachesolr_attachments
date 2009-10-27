@@ -34,7 +34,7 @@ function apachesolr_attachments_default_excluded() {
  * Displays the Attachment Settings Form.
 */
 function apachesolr_attachments_settings() {
-  $default = implode(apachesolr_attachments_default_excluded(), ' ');
+  $default = implode(' ', apachesolr_attachments_default_excluded());
   $form['apachesolr_attachment_excluded_extensions'] = array(
     '#type' => 'textfield',
     '#title' => t('Excluded file extensions'),
