@@ -477,7 +477,10 @@ function apachesolr_attachments_extract_using_solr($filepath) {
   // by apachesolr.module.
   $solr = apachesolr_get_solr();
   $filename = basename($filepath);
-  $params = array('resource.name' => $filename);
+  $params = array(
+    'resource.name' => $filename,
+    'extractFormat' => 'text', // Matches the -t command for the tika CLI app.
+  );
   // Construct a multi-part form-data POST body in $data.
   $boundary = '--' . md5(uniqid(time()));
   $data = "--{$boundary}\r\n";

@@ -5,6 +5,7 @@ Apache Solr Attachments x.x-x.x, xxxx-xx-xx
 
 Apache Solr Attachments 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#616426 by pwolanin, set  extractFormat as 'text' for Solr Cell.
 
 Apache Solr Attachments 6.x-2.0-alpha1, 2009-10-27
 ------------------------------
