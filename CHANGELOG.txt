@@ -5,6 +5,9 @@ Apache Solr Attachments x.x-x.x, xxxx-xx-xx
 
 Apache Solr Attachments 6.x-2.x, xxxx-xx-xx
 ------------------------------
+
+Apache Solr Attachments 6.x-2.0-alpha1, 2009-10-27
+------------------------------
 #490078 by pwolanin, enable use of Solr Cell, aka ExtractingRequestHandler.
 #540974 by pwolanin, update docs for installing tika 0.3 and 0.4.
 #610816 by pwolanin, don't need to add path again to fl.
