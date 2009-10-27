@@ -1,22 +1,31 @@
 Index: solrconfig.xml
 ===================================================================
 RCS file: /cvs/drupal-contrib/contributions/modules/apachesolr/solrconfig.xml,v
-retrieving revision 1.1.2.16
-diff -u -p -r1.1.2.16 solrconfig.xml
---- solrconfig.xml	2 Mar 2009 05:07:36 -0000	1.1.2.16
-+++ solrconfig.xml	10 Apr 2009 14:27:57 -0000
-@@ -511,6 +511,16 @@
-    </lst>
+retrieving revision 1.1.2.20
+diff -u -p -r1.1.2.20 solrconfig.xml
+--- solrconfig.xml	14 Oct 2009 13:28:40 -0000	1.1.2.20
++++ solrconfig.xml	26 Oct 2009 00:12:24 -0000
+@@ -357,7 +357,7 @@
+     -->
+   <requestDispatcher handleSelect="true" >
+     <!--Make sure your system has some authentication before enabling remote streaming!  -->
+-    <requestParsers enableRemoteStreaming="false" multipartUploadLimitInKB="2048" />
++    <requestParsers enableRemoteStreaming="false" multipartUploadLimitInKB="8192" />
+ 
+     <!-- Set HTTP caching related parameters (for proxy caches and clients).
+           
+@@ -515,6 +515,16 @@
+     </lst>
    </requestHandler>
  
 +  <!-- An extract-only path for accessing the tika utility -->
-+  <requestHandler name="/extract/tika" class="solr.ExtractingRequestHandler">
++  <requestHandler name="/extract/tika" class="org.apache.solr.handler.extraction.ExtractingRequestHandler" startup="lazy">
++
 +    <lst name="defaults">
-+      <bool name="ext.ignore.und.fl">true</bool>
 +    </lst>
 +    <!-- This path only extracts - never updates -->
 +    <lst name="invariants">
-+      <bool name="ext.extract.only">true</bool>
++      <bool name="extractOnly">true</bool>
 +    </lst>
 +  </requestHandler>
  

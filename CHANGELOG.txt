@@ -1,0 +1,13 @@
+// $Id$
+
+Apache Solr Attachments x.x-x.x, xxxx-xx-xx
+------------------------------
+
+Apache Solr Attachments 6.x-2.x, xxxx-xx-xx
+------------------------------
+#490078 by pwolanin, enable use of Solr Cell, aka ExtractingRequestHandler.
+#540974 by pwolanin, update docs for installing tika 0.3 and 0.4.
+#610816 by pwolanin, don't need to add path again to fl.
+#508576 by EclipseGc, respect Node Access on Files.
+#461514 by pwolanin, get rows not results, better limiting on cron.
+#449214 by pwolanin, rewrite to use tika 0.3 for text extraction.
