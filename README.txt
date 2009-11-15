@@ -34,8 +34,16 @@ export MAVEN_OPTS="-Xmx1024m -Xms512m"
 
 mvn install
 
-will build the full set of tika applications - it will install the app jar
-in a location like ~/.m2/repository/org/apache/tika/tika-app/0.4/
+will build the full set of tika applications - it will build the app jar
+in a location like tika-app/target/tika-app-0.4.jar
+
 Copy tika-app-0.4.jar from there or point the module path to it.
 
 See also build instructions at: http://drupal.org/node/540974#comment-1944082
+
+There seems is a bug in the Tika 0.3 and 0.4 CLI implementation. See:
+https://issues.apache.org/jira/browse/TIKA-324 and apply the patch 
+to Tika 0.4 before building or international characters will not be extracted
+correctly with the -t flag.
+
+As an alternative, change the module code to use the -h or -x flags.
