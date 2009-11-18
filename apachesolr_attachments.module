@@ -249,7 +249,7 @@ function apachesolr_attachments_add_documents(&$documents, $nid) {
         $document->sticky = $node->sticky;
         $document->promote = $node->promote;
         $document->uid = $node->uid;
-        $document->name = apachesolr_strip_ctl_chars($node->name);
+        $document->name = $node->name;
         $document->body = apachesolr_clean_text($file->description) .' '. $text;
 
         $document->bs_file = TRUE;
@@ -456,7 +456,9 @@ function apachesolr_attachments_extract_using_tika($filepath) {
   $tika = $tika_path .'/'. variable_get('apachesolr_attachments_tika_jar', 'tika-0.3.jar');
 
   $java = variable_get('apachesolr_attachments_java', 'java');
-  $cmd = escapeshellcmd($java .' -cp '. $tika_path .' -jar '. $tika .' -t "'. $filepath .'"');
+  // By default force UTF-8 output.
+  $java_opts = ' ' . variable_get('apachesolr_attachments_java_opts', '-Dfile.encoding=UTF8');
+  $cmd = escapeshellcmd($java . $java_opts .' -cp '. $tika_path .' -jar '. $tika .' -t "'. $filepath .'"');
 
   // Add a work-around for a MAMP bug.
   if (strpos(ini_get('extension_dir'), 'MAMP/')) {
