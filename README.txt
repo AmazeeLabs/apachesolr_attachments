@@ -1,7 +1,10 @@
 
 Apache Solr Attachments for 6.x
 
-Requires the ability to run java and installation of tika 0.3 or higher.
+Requires the ability to run java and installation of tika 0.3 or higher,
+or access to a solr server set up for content extraction (e.g. a Solr
+1.4 final release).  For Solr, there is a patch to apply to the solrconfig
+to add another request handler.
 
 see:  
 http://lucene.apache.org/tika/gettingstarted.html
@@ -40,10 +43,3 @@ in a location like tika-app/target/tika-app-0.4.jar
 Copy tika-app-0.4.jar from there or point the module path to it.
 
 See also build instructions at: http://drupal.org/node/540974#comment-1944082
-
-There seems is a bug in the Tika 0.3 and 0.4 CLI implementation. See:
-https://issues.apache.org/jira/browse/TIKA-324 and apply the patch 
-to Tika 0.4 before building or international characters will not be extracted
-correctly with the -t flag.
-
-As an alternative, change the module code to use the -h or -x flags.
