@@ -97,7 +97,7 @@ function apachesolr_attachments_schema() {
 }
 
 /**
-* Add sha1 and body fields to {apachesolr_attachments_files}.
+ * Add sha1 and body fields to {apachesolr_attachments_files}.
  */
 function apachesolr_attachments_update_6000() {
   $ret = array();
@@ -119,5 +119,14 @@ function apachesolr_attachments_update_6000() {
   );
   db_add_field($ret, 'apachesolr_attachments_files', 'body', $schema);
 
+  return $ret;
+}
+
+/**
+ * Force reindex for entity field.
+ */
+function apachesolr_attachments_update_6001() {
+  $ret = array();
+  apachesolr_clear_last_index('apachesolr_attachments');
   return $ret;
 }
