@@ -59,6 +59,24 @@ function apachesolr_attachments_settings() {
     '#description' =>  t("The name of the tika CLI application jar file, e.g. tika-0.3.jar or tika-app-0.4.jar."),
     '#default_value' => variable_get('apachesolr_attachments_tika_jar', 'tika-0.3.jar'),
   );
+  $form['apachesolr_attachments-cron-settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Cron settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['apachesolr_attachments-cron-settings']['apachesolr_attachments_cron_limit'] = array(
+    '#type' => 'select',
+    '#title' => t('Maximum number of nodes to examine'),
+    '#default_value' => variable_get('apachesolr_attachments_cron_limit', 100),
+    '#options' => drupal_map_assoc(array(10, 20, 50, 100, 200)),
+  );
+  $form['apachesolr_attachments-cron-settings']['apachesolr_attachements_cron_time_limit'] = array(
+    '#type' => 'select',
+    '#title' => t('Maximum time to expend (sec)'),
+    '#default_value' => variable_get('apachesolr_attachements_cron_time_limit', 15),
+    '#options' => drupal_map_assoc(array(5, 10, 15, 20, 25, 30, 45, 60)),
+  );
 
   $form = system_settings_form($form);
   $form['#validate'][] = 'apachesolr_attachments_settings_validate';

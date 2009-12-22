@@ -5,6 +5,7 @@ Apache Solr Attachments x.x-x.x, xxxx-xx-xx
 
 Apache Solr Attachments 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#666090 by pwolanin, add cron settings to the UI.
 #506526 by pwolanin, Preserve file paths on Windows.
 #664154 by pwolanin, Update for RC4 of ApacheSolr module and updated schema 0.9.4
 #616426 by pwolanin, set  extractFormat as 'text' for Solr Cell.
