@@ -172,7 +172,7 @@ function apachesolr_attachments_cron() {
     $ids = array();
     $fids = array();
     while ($file = db_fetch_object($result)) {
-      $ids[] = 'id:'. apachesolr_document_id($file->fid .'-'. $file->nid, 'file');
+      $ids[] = apachesolr_document_id($file->fid .'-'. $file->nid, 'file');
       $fids[] = $file->fid;
     }
     if ($ids) {
