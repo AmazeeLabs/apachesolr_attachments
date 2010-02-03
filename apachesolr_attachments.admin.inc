@@ -191,7 +191,7 @@ function apachesolr_attachments_confirm_submit($form, &$form_state) {
       t('All file attachments will be re-indexed.');
       break;
     case 'clear-cache':
-      db_query("DELETE FROM {apachesolr_attachments_files}");
+      db_query("DELETE FROM {apachesolr_attachments_files} WHERE removed = 0");
       drupal_set_message(t('The local cache of extracted text has been deleted.'));
       break;
   }
