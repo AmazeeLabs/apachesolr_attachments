@@ -134,7 +134,7 @@ function apachesolr_attachements_delete_index_form() {
   );
   $form['cache-desc'] = array(
     '#type' => 'item',
-    '#description' => t('Deletes the local cache of extacted text from files. This will cause slower performance when reindexing ince text must be re-extracted.'),
+    '#description' => t('Deletes the local cache of extacted text from files. This will cause slower performance when reindexing since text must be re-extracted.'),
   );
   return $form;
 }
