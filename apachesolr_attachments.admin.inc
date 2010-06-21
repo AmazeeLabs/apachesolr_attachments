@@ -203,7 +203,7 @@ function apachesolr_attachements_delete_index() {
     $solr = apachesolr_get_solr();
     $solr->deleteByQuery("entity:file AND hash:". apachesolr_site_hash());
     $solr->commit();
-    apachesolr_index_updated(time());
+    apachesolr_index_set_last_updated(time());
     apachesolr_clear_last_index('apachesolr_attachments');
     return TRUE;
   }

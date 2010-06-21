@@ -5,6 +5,7 @@ Apache Solr Attachments x.x-x.x, xxxx-xx-xx
 
 Apache Solr Attachments 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#817066 by ebeyrent, fix call to undefined function apachesolr_index_updated.
 #698672 by Agileware, fix ids so files get deleted from the index on cron.
 #698694 by pwolanin, retain information on removed files during cache clear.
 #666090 by pwolanin, add cron settings to the UI.
