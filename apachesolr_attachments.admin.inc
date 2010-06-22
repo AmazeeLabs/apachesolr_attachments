@@ -284,7 +284,7 @@ function apachesolr_attachments_add_documents($node, $namespace) {
       $documents[] = $document;
     }
     else {
-      watchdog('Apache Solr Attachments', t('Could not extract any indexable text from %filepath'), array('%filepath' => $file->filepath), WATCHDOG_WARNING);
+      watchdog('Apache Solr Attachments', 'Could not extract any indexable text from %filepath', array('%filepath' => $file->filepath), WATCHDOG_WARNING);
     }
   }
   return $documents;
@@ -407,9 +407,14 @@ function apachesolr_attachments_get_attachment_text($file) {
   }
   else {
     // Extract using Solr.
-    // We allow Solr to throw exceptions - they will be caught
-    // by apachesolr.module.
-    list($text, $metadata) = apachesolr_attachments_extract_using_solr($filepath);
+    try {
+      list($text, $metadata) = apachesolr_attachments_extract_using_solr($filepath);
+    }
+    catch (Exception $e) {
+      // Exceptions from Solr may be transient, or indicate a problem with a specific file.
+      watchdog('Apache Solr Attachments', "Exception occured sending %filepath to Solr\n!message", array('%filepath' => $file->filepath, '!message' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
+      return '';
+    }
   }
   // Strip bad control characters.
   $text = iconv("UTF-8", "UTF-8//IGNORE", $text);
