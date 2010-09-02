@@ -6,7 +6,7 @@
  *   Provides a file attachment search implementation for use with the Apache Solr module
  */
 
-define (EXTRACTING_SERVLET, 'extract/tika');
+define ('EXTRACTING_SERVLET', 'extract/tika');
 
 /**
  * Implementation of hook_menu().
