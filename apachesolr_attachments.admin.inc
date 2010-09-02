@@ -277,7 +277,7 @@ function apachesolr_attachments_add_documents($node, $namespace) {
       apachesolr_add_taxonomy_to_document($document, $node);
 
       if (module_exists('apachesolr_nodeaccess')) {
-        apachesolr_nodeaccess_apachesolr_update_index($document, $node);
+        apachesolr_nodeaccess_apachesolr_update_index($document, $node, $namespace);
       }
       drupal_alter('apachesolr_attachment_index', $document, $node, $file);
 
