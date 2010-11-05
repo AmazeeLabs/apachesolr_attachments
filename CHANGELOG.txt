@@ -5,6 +5,7 @@ Apache Solr Attachments x.x-x.x, xxxx-xx-xx
 
 Apache Solr Attachments 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#936464 by aaron1234nz, halstead: Watchdog has a limit of 16 characters in the type field.
 #815104 by ebeyrent, pwolanin minimal handling for failed Solr extraction.
 #817066 by ebeyrent, fix call to undefined function apachesolr_index_updated.
 #698672 by Agileware, fix ids so files get deleted from the index on cron.

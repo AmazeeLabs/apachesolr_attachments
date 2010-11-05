@@ -183,7 +183,8 @@ function apachesolr_attachments_cron() {
     }
   }
   catch (Exception $e) {
-    watchdog('Apache Solr Attachments', nl2br(check_plain($e->getMessage())) . ' in apachesolr_attachments_cron', NULL, WATCHDOG_ERROR);
+    // Shortened project name because the watchdog limits type to 16 characters.
+    watchdog('ApacheSolrAttach', nl2br(check_plain($e->getMessage())) . ' in apachesolr_attachments_cron', NULL, WATCHDOG_ERROR);
   }
 }
 
@@ -234,7 +235,8 @@ function apachesolr_attachments_remove_attachments_from_index($nid) {
     $solr->commit();
   }
   catch (Exception $e) {
-    watchdog('Apache Solr Attachments', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    // Shortened project name because the watchdog limits type to 16 characters.
+    watchdog('ApacheSolrAttach', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
   }
 }
 

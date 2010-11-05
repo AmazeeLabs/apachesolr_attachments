@@ -208,7 +208,8 @@ function apachesolr_attachements_delete_index() {
     return TRUE;
   }
   catch (Exception $e) {
-    watchdog('Apache Solr Attachments', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    // Shortened project name because the watchdog limits type to 16 characters.
+    watchdog('ApacheSolrAttach', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
   }
   return FALSE;
 }
@@ -284,7 +285,8 @@ function apachesolr_attachments_add_documents($node, $namespace) {
       $documents[] = $document;
     }
     else {
-      watchdog('Apache Solr Attachments', 'Could not extract any indexable text from %filepath', array('%filepath' => $file->filepath), WATCHDOG_WARNING);
+      // Shortened project name because the watchdog limits type to 16 characters.
+      watchdog('ApacheSolrAttach', 'Could not extract any indexable text from %filepath', array('%filepath' => $file->filepath), WATCHDOG_WARNING);
     }
   }
   return $documents;
@@ -412,7 +414,8 @@ function apachesolr_attachments_get_attachment_text($file) {
     }
     catch (Exception $e) {
       // Exceptions from Solr may be transient, or indicate a problem with a specific file.
-      watchdog('Apache Solr Attachments', "Exception occured sending %filepath to Solr\n!message", array('%filepath' => $file->filepath, '!message' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
+      // Shortened project name because the watchdog limits type to 16 characters.
+      watchdog('ApacheSolrAttach', "Exception occured sending %filepath to Solr\n!message", array('%filepath' => $file->filepath, '!message' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
       return '';
     }
   }
