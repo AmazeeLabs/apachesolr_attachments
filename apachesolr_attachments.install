@@ -83,7 +83,7 @@ function apachesolr_attachments_schema() {
       'body' => array(
         'description' => 'The cached body (extracted text) of the file (except for text files).',
         'type' => 'text',
-        'not null' => TRUE,
+        'not null' => FALSE,
         'size' => 'big'),
      ),
     'indexes' => array(
@@ -128,5 +128,21 @@ function apachesolr_attachments_update_6000() {
 function apachesolr_attachments_update_6001() {
   $ret = array();
   apachesolr_clear_last_index('apachesolr_attachments');
+  return $ret;
+}
+
+/**
+ * Update body field to not null = FALSE
+ */
+function apachesolr_attachments_update_6002() {
+  $ret = array();
+  
+  db_change_field($ret, 'apachesolr_attachments_files', 'body', 'body', array(
+    'description' => 'The cached body (extracted text) of the file (except for text files).',
+    'type' => 'text',
+    'not null' => FALSE,
+    'size' => 'big')
+  );
+
   return $ret;
 }
