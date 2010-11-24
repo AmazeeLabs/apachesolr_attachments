@@ -269,6 +269,13 @@ function apachesolr_attachments_add_documents($node, $namespace) {
       $document->promote = $node->promote;
       $document->uid = $node->uid;
       $document->name = $node->name;
+      if (empty($node->language)) {
+        // 'und' is the language-neutral code in Drupal 7.
+        $document->language = 'und';
+      }
+      else {
+        $document->language = $node->language;
+      }
       $document->body = apachesolr_clean_text($file->description) .' '. $text;
 
       $document->ss_filemime = $file->filemime;
