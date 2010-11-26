@@ -3,10 +3,8 @@
 
 /**
  * @file
- *   Provides a file attachment search implementation for use with the Apache Solr module
+ * Provides a file attachment search implementation for use with the Apache Solr module
  */
-
-//apachesolr_clear_last_index('apachesolr_attachments');
 
 function apachesolr_attachments_admin_page() {
   $output = '';
@@ -17,7 +15,9 @@ function apachesolr_attachments_admin_page() {
 
 /**
  * Displays the Attachment Settings Form.
-*/
+ *
+ * @see apachesolr_attachments_settings_submit()
+ */
 function apachesolr_attachments_settings() {
   $default = implode(' ', apachesolr_attachments_default_excluded());
   $form['apachesolr_attachment_excluded_extensions'] = array(
@@ -93,6 +93,11 @@ function apachesolr_attachments_settings_validate($form, &$form_state) {
   }
 }
 
+/**
+ * Form submit handler for the settings Form
+ *
+ * @see apachesolr_attachments_settings()
+ */
 function apachesolr_attachments_settings_submit($form, &$form_state) {
   // Delete this so it's rebuilt.
   variable_del('apachesolr_attachment_excluded_mime');
@@ -140,9 +145,9 @@ function apachesolr_attachements_delete_index_form() {
 }
 
 /**
- * Submit function for the "Re-index all content" button
- * @see apachesolr_delete_index_form()
+ * Submit handler for the "Re-index all content" button
  *
+ * @see apachesolr_delete_index_form()
  */
 function apachesolr_attachments_reindex_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/settings/apachesolr/attachments/confirm/reindex';
@@ -156,6 +161,11 @@ function apachesolr_attachments_delete_cache_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/settings/apachesolr/attachments/confirm/clear-cache';
 }
 
+/**
+ * Index confirmation form
+ *
+ * @see apachesolr_attachments_confirm_submit()
+ */
 function apachesolr_attachments_confirm($form_state, $operation) {
   $form = array();
   $form['operation'] = array(
@@ -176,6 +186,11 @@ function apachesolr_attachments_confirm($form_state, $operation) {
   return confirm_form($form, $text, 'admin/settings/apachesolr/attachments', NULL, t('Confirm'), t('Cancel'));
 }
 
+/**
+ * Form submit handler for the index confirmation form
+ *
+ * @see apachesolr_attachments_confirm()
+ */
 function apachesolr_attachments_confirm_submit($form, &$form_state) {
   switch ($form_state['values']['operation']) {
     case 'delete':
@@ -488,4 +503,3 @@ function apachesolr_attachments_extract_using_solr($filepath) {
   $response = $solr->makeServletRequest(EXTRACTING_SERVLET, $params, 'POST', $headers, $data);
   return array($response->extracted, $response->extracted_metadata);
 }
-

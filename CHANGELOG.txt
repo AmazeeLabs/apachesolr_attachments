@@ -5,6 +5,8 @@ Apache Solr Attachments x.x-x.x, xxxx-xx-xx
 
 Apache Solr Attachments 6.x-2.x, xxxx-xx-xx
 ------------------------------
+#980586 by wmostrey File summary appears as '...'
+#884606 by robertDouglass Integrate apachesolr_attachments with apachesolr_multilingual
 #936466 by aaron1234nz, halstead: Body field can be NULL on initial insert.
 #936464 by aaron1234nz, halstead: Watchdog has a limit of 16 characters in the type field.
 #815104 by ebeyrent, pwolanin minimal handling for failed Solr extraction.
