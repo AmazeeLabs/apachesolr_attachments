@@ -3,4 +3,8 @@ description = Searching file attachments with Solr
 dependencies[] = apachesolr
 dependencies[] = apachesolr_search
 package = Apache Solr
-core = "6.x"
+core = 7.x
+
+files[] = apachesolr_attachments.admin.inc
+files[] = apachesolr_attachments.install
+files[] = apachesolr_attachments.module

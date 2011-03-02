@@ -5,19 +5,22 @@
  * Provides a file attachment search implementation for use with the Apache Solr module
  */
 
+/**
+ * Menu callback: Apache Solr Attachments settings tab.
+ */
 function apachesolr_attachments_admin_page() {
-  $output = '';
-  $output .= drupal_get_form('apachesolr_attachments_settings');
-  $output .= drupal_get_form('apachesolr_attachements_delete_index_form');
+  $output['apachesolr_attachments_settings'] = drupal_get_form('apachesolr_attachments_settings');
+  $output['apachesolr_attachments_index_action_form'] = drupal_get_form('apachesolr_attachments_index_action_form');
   return $output;
 }
 
 /**
  * Displays the Attachment Settings Form.
  *
+ * @see apachesolr_attachments_settings_validate()
  * @see apachesolr_attachments_settings_submit()
  */
-function apachesolr_attachments_settings() {
+function apachesolr_attachments_settings($form) {
   $default = implode(' ', apachesolr_attachments_default_excluded());
   $form['apachesolr_attachment_excluded_extensions'] = array(
     '#type' => 'textfield',
@@ -30,7 +33,10 @@ function apachesolr_attachments_settings() {
   $form['apachesolr_attachments_exclude_types'] = array(
     '#type' => 'radios',
     '#title' => t('Exclude files attached to a node of a type excluded by Apache Solr Search'),
-    '#options' => array('0' => t('No'), '1' => t('Yes')),
+    '#options' => array(
+      '0' => t('No'),
+      '1' => t('Yes'),
+    ),
     '#default_value' => variable_get('apachesolr_attachments_exclude_types', 1),
   );
   $form['apachesolr_attachment_extract_using'] = array(
@@ -40,7 +46,7 @@ function apachesolr_attachments_settings() {
       'tika' => t('Tika (local java application)'),
       'solr' => t('Solr (remote server)'),
     ),
-    '#description' =>  t("Extraction will be faster if run locally using tika."),
+    '#description' => t("Extraction will be faster if run locally using tika."),
     '#default_value' => variable_get('apachesolr_attachment_extract_using', 'tika'),
   );
   $form['apachesolr_attachments_tika_path'] = array(
@@ -48,14 +54,14 @@ function apachesolr_attachments_settings() {
     '#title' => t('Tika directory path'),
     '#size' => 80,
     '#maxlength' => 100,
-    '#description' =>  t("The full path to tika directory.  All library jars must be in the same directory."),
+    '#description' => t("The full path to tika directory.  All library jars must be in the same directory."),
     '#default_value' => variable_get('apachesolr_attachments_tika_path', ''),
   );
   $form['apachesolr_attachments_tika_jar'] = array(
     '#type' => 'textfield',
     '#title' => t('Tika jar file'),
     '#size' => 20,
-    '#description' =>  t("The name of the tika CLI application jar file, e.g. tika-0.3.jar or tika-app-0.4.jar."),
+    '#description' => t("The name of the tika CLI application jar file, e.g. tika-0.3.jar or tika-app-0.4.jar."),
     '#default_value' => variable_get('apachesolr_attachments_tika_jar', 'tika-0.3.jar'),
   );
   $form['apachesolr_attachments-cron-settings'] = array(
@@ -83,6 +89,11 @@ function apachesolr_attachments_settings() {
   return $form;
 }
 
+/**
+ * Form validation for the Apache Solr Attachments settings form.
+ *
+ * @see apachesolr_attachments_settings()
+ */
 function apachesolr_attachments_settings_validate($form, &$form_state) {
   if ($form_state['values']['apachesolr_attachment_extract_using'] == 'tika') {
     $path = realpath($form_state['values']['apachesolr_attachments_tika_path']);
@@ -100,64 +111,74 @@ function apachesolr_attachments_settings_validate($form, &$form_state) {
 function apachesolr_attachments_settings_submit($form, &$form_state) {
   // Delete this so it's rebuilt.
   variable_del('apachesolr_attachment_excluded_mime');
-  drupal_set_message(t('If you changed the allowed file extensions, you may need to delete and re-index all attachements.'));
+  drupal_set_message(t('If you changed the allowed file extensions, you may need to delete and re-index all attachments.'));
 }
 
 /**
  * Create a form for deleting the contents of the Solr index.
  */
-function apachesolr_attachements_delete_index_form() {
+function apachesolr_attachments_index_action_form() {
   $form = array();
-  $form['markup'] = array(
-    '#prefix' => '<h3>',
-    '#value' => t('Index and cache controls'),
-    '#suffix' => '</h3>',
+
+  $form['action'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Index Actions'),
   );
-  $form['reindex'] = array(
+  // Jump through some forms hoops to get a description under each radio button.
+  $actions = array(
+    'reindex' => array(
+      'title' => t('Re-index all files'),
+      'description' => t('Re-indexing will add all file text to the index again (overwriting the index), but existing text in the index will remain searchable.'),
+    ),
+    'delete' => array(
+      'title' => t('Delete files from index'),
+      'description' => t('Deletes all of the files in the Solr index and reindexes them. This may be needed if you have changed the allowed file extensions, if your index is corrupt, or if you have installed a new schema.xml.'),
+    ),
+    'clear-cache' => array(
+      'title' => t('Delete cached file text'),
+      'description' => t('Deletes the local cache of extracted text from files. This will cause slower performance when reindexing since text must be re-extracted.'),
+    ),
+  );
+  foreach ($actions as $key => $action) {
+    // Generate the parents as the autogenerator does, so we will have a
+    // unique id for each radio button.
+    $form['action'][$key] = array(
+      '#type' => 'radio',
+      '#title' => $action['title'],
+      '#default_value' => 'remaining',
+      '#return_value' => $key,
+      '#parents' => array('action'),
+      '#description' => $action['description'],
+      '#id' => drupal_clean_css_identifier('edit-'. implode('-', array('action', $key))),
+    );
+  }
+
+  $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Re-index all files'),
-    '#submit' => array('apachesolr_attachments_reindex_submit'),
+    '#value' => t('Begin'),
+    '#submit' => array('apachesolr_attachments_index_action_form_submit'),
   );
-  $form['reindex-desc'] = array(
-    '#type' => 'item',
-    '#description' => t('Re-indexing will add all file text to the index again (overwriting the index), but existing text in the index will remain searchable.'),
-  );
-  $form['delete'] = array(
-    '#type' => 'submit',
-    '#value' => t('Delete files from index'),
-    '#submit' => array('apachesolr_attachments_delete_index_submit'),
-  );
-  $form['delete-desc'] = array(
-    '#type' => 'item',
-    '#description' => t('Deletes all of the files in the Solr index and reindexes them.  This may be needed if you have changed the allowed file extensions,if your index is corrupt, or if you have installed a new schema.xml.'),
-  );
-  $form['clear-cache'] = array(
-    '#type' => 'submit',
-    '#value' => t('Delete cached file text'),
-    '#submit' => array('apachesolr_attachments_delete_cache_submit'),
-  );
-  $form['cache-desc'] = array(
-    '#type' => 'item',
-    '#description' => t('Deletes the local cache of extacted text from files. This will cause slower performance when reindexing since text must be re-extracted.'),
-  );
+
   return $form;
 }
 
 /**
- * Submit handler for the "Re-index all content" button
- *
- * @see apachesolr_delete_index_form()
+ * Submit function for the index action form.
  */
-function apachesolr_attachments_reindex_submit($form, &$form_state) {
-  $form_state['redirect'] = 'admin/settings/apachesolr/attachments/confirm/reindex';
-}
+function apachesolr_attachments_index_action_form_submit($form, &$form_state) {
+  switch ($form_state['values']['action']) {
+    case 'reindex':
+      $form_state['redirect'] = 'admin/config/search/apachesolr/attachments/confirm/reindex';
+      break;
 
-function apachesolr_attachments_delete_index_submit($form, &$form_state) {
-  $form_state['redirect'] = 'admin/settings/apachesolr/attachments/confirm/delete';
-}
+    case 'delete':
+      $form_state['redirect'] = 'admin/config/search/apachesolr/attachments/confirm/delete';
+      break;
 
-function apachesolr_attachments_delete_cache_submit($form, &$form_state) {
-  $form_state['redirect'] = 'admin/settings/apachesolr/attachments/confirm/clear-cache';
+    case 'clear-cache':
+      $form_state['redirect'] = 'admin/config/search/apachesolr/attachments/confirm/clear-cache';
+      break;
+  }
 }
 
 /**
@@ -165,7 +186,7 @@ function apachesolr_attachments_delete_cache_submit($form, &$form_state) {
  *
  * @see apachesolr_attachments_confirm_submit()
  */
-function apachesolr_attachments_confirm($form_state, $operation) {
+function apachesolr_attachments_confirm($form, $form_state, $operation) {
   $form = array();
   $form['operation'] = array(
     '#type' => 'value',
@@ -182,7 +203,7 @@ function apachesolr_attachments_confirm($form_state, $operation) {
       $text = t('Are you sure you want to delete the cache of extracted text from file attachments?');
       break;
   }
-  return confirm_form($form, $text, 'admin/settings/apachesolr/attachments', NULL, t('Confirm'), t('Cancel'));
+  return confirm_form($form, $text, 'admin/config/search/apachesolr/attachments', NULL, t('Confirm'), t('Cancel'));
 }
 
 /**
@@ -193,37 +214,41 @@ function apachesolr_attachments_confirm($form_state, $operation) {
 function apachesolr_attachments_confirm_submit($form, &$form_state) {
   switch ($form_state['values']['operation']) {
     case 'delete':
-      if (apachesolr_attachements_delete_index()) {
-        drupal_set_message(t('File text has been deleted from the Apache Solr index. You must now !run_cron until all files have been re-indexed.', array('!run_cron' => l(t('run cron'), 'admin/reports/status/run-cron', array('query' => array('destination' => 'admin/settings/apachesolr/index'))))));
+      if (apachesolr_attachments_delete_index()) {
+        drupal_set_message(t('File text has been deleted from the Apache Solr index. You must now <a href="!url">run cron</a> until all files have been re-indexed.', array('!url' => url('admin/reports/status/run-cron', array('query' => array('destination' => 'admin/config/search/apachesolr/index'))))));
       }
       else {
-        drupal_set_message(t('An error occurred'));
+        if (module_exists('dblog')) {
+          drupal_set_message(t('Could not delete file text from the Apache Solr index. Check <a href="!url">recent log messages</a>.', array('!url' => url('admin/reports/dblog'))));
+        }
+        else {
+          drupal_set_message(t('Could not delete file text from the Apache Solr index.'));
+        }
       }
       break;
     case 'reindex':
       apachesolr_clear_last_index('apachesolr_attachments');
-      t('All file attachments will be re-indexed.');
+      drupal_set_message(t('All file attachments will be re-indexed.'));
       break;
     case 'clear-cache':
-      db_query("DELETE FROM {apachesolr_attachments_files} WHERE removed = 0");
+      db_delete('apachesolr_attachments_files')->condition('removed', 0)->execute();
       drupal_set_message(t('The local cache of extracted text has been deleted.'));
       break;
   }
-  $form_state['redirect'] = 'admin/settings/apachesolr/attachments';
+  $form_state['redirect'] = 'admin/config/search/apachesolr/attachments';
 }
 
-function apachesolr_attachements_delete_index() {
+function apachesolr_attachments_delete_index() {
   try {
     $solr = apachesolr_get_solr();
-    $solr->deleteByQuery("entity:file AND hash:". apachesolr_site_hash());
+    $solr->deleteByQuery("entity:file AND hash:" . apachesolr_site_hash());
     $solr->commit();
-    apachesolr_index_set_last_updated(time());
+    apachesolr_index_set_last_updated(REQUEST_TIME);
     apachesolr_clear_last_index('apachesolr_attachments');
     return TRUE;
   }
   catch (Exception $e) {
-    // Shortened project name because the watchdog limits type to 16 characters.
-    watchdog('ApacheSolrAttach', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    watchdog('Apache Solr Attachments', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
   }
   return FALSE;
 }
@@ -233,122 +258,52 @@ function apachesolr_attachements_delete_index() {
  */
 
 /**
- * Callback for apachesolr_index_nodes().
- *
- * Adds a document for each indexable file attachment for the given node ID.
- */
-function apachesolr_attachments_add_documents($node, $namespace) {
-  $document = FALSE;
-  $hash = apachesolr_site_hash();
-  // Since there is no notification for an attachment being unassociated with a
-  // node (but that action will trigger it to be indexed again), we check for
-  // fids that were added before but no longer present on this node.
-
-  $fids = array();
-  $result = db_query("SELECT fid FROM {apachesolr_attachments_files} WHERE nid = %d", $node->nid);
-  while ($row = db_fetch_array($result)) {
-    $fids[$row['fid']] = $row['fid'];
-  }
-
-  $files = apachesolr_attachments_get_indexable_files($node);
-
-  // Find deleted files.
-  $missing_fids = array_diff_key($fids, $files);
-  if ($missing_fids) {
-    db_query("UPDATE {apachesolr_attachments_files} SET removed = 1 WHERE fid IN (". db_placeholders($missing_fids) .")", $missing_fids);
-  }
-  $new_files = array_diff_key($files, $fids);
-  // Add new files.
-  foreach ($new_files as $file) {
-    db_query("INSERT INTO {apachesolr_attachments_files} (fid, nid, removed, sha1) VALUES (%d, %d, 0, '')", $file->fid, $node->nid);
-  }
-  foreach ($files as $file) {
-    $text = apachesolr_attachments_get_attachment_text($file);
-
-    if ($text) {
-      $document = new Apache_Solr_Document();
-      // A single file might be attached to multiple nodes.
-      $document->id = apachesolr_document_id($file->fid .'-'. $node->nid, 'file');
-      $document->url = file_create_url($file->filepath);
-      $document->path = $file->filepath;
-      $document->hash = $hash;
-      $document->entity = 'file';
-      $document->site = url(NULL, array('absolute' => TRUE));
-      $document->nid = $node->nid;
-      $document->title = $file->filename;
-      $document->created = apachesolr_date_iso($file->timestamp);
-      $document->changed = $document->created;
-      $document->status = $node->status;
-      $document->sticky = $node->sticky;
-      $document->promote = $node->promote;
-      $document->uid = $node->uid;
-      $document->name = $node->name;
-      if (empty($node->language)) {
-        // 'und' is the language-neutral code in Drupal 7.
-        $document->language = 'und';
-      }
-      else {
-        $document->language = $node->language;
-      }
-      $document->body = apachesolr_clean_text($file->description) .' '. $text;
-
-      $document->ss_filemime = $file->filemime;
-      $document->ss_file_node_title = apachesolr_clean_text($node->title);
-      $document->ss_file_node_url = url('node/' . $node->nid, array('absolute' => TRUE));
-
-      apachesolr_add_taxonomy_to_document($document, $node);
-
-      if (module_exists('apachesolr_nodeaccess')) {
-        apachesolr_nodeaccess_apachesolr_update_index($document, $node, $namespace);
-      }
-      drupal_alter('apachesolr_attachment_index', $document, $node, $file);
-
-      $documents[] = $document;
-    }
-    else {
-      // Shortened project name because the watchdog limits type to 16 characters.
-      watchdog('ApacheSolrAttach', 'Could not extract any indexable text from %filepath', array('%filepath' => $file->filepath), WATCHDOG_WARNING);
-    }
-  }
-  return $documents;
-}
-
-/**
  * Return all non-excluded file attachments for a particular node
  */
 function apachesolr_attachments_get_indexable_files($node) {
   $files = array();
 
-  if(!empty($node->files)) {
-    $files = $node->files;
-  }
-
-  $fields = apachesolr_attachments_get_cck_file_fields();
-  foreach ($fields as $field) {
-    if(!empty($node->$field)) {
-      $files = array_merge($files, $node->$field);
+  $field_names = apachesolr_attachments_get_field_names();
+  foreach ($field_names as $field_name) {
+    if (!empty($node->$field_name)) {
+      $field = $node->$field_name;
+      list($lang, $values) = each($field);
+      $files = array_merge($files, $values);
     }
   }
+
   $file_list = array();
   foreach ($files as $file) {
-    // Some are arrays others are objects, treat them all as objects
-    $file = (object) $file;
-    // Some filefield-enabled nodes show up with an emtpy file array.
-    if (!empty($file->fid) && apachesolr_attachments_allowed_mime($file->filemime)) {
-      if (isset($file->data['description']) && !isset($file->description)) {
-        $file->description = $file->data['description'];
-      }
-      $file_list[$file->fid] = $file;
+    if (apachesolr_attachments_allowed_mime($file['filemime'])) {
+      $file_list[$file['fid']] = $file;
     }
   }
   return $file_list;
 }
 
+/**
+ * Provides a default list of filename extensions to exclude from the index.
+ *
+ * @return
+ *   An array of file extensions.
+ */
 function apachesolr_attachments_default_excluded() {
-  $default = array('aif', 'art', 'avi', 'bmp', 'gif', 'ico', 'jpg', 'mov', 'mp3', 'mp4', 'mpg', 'oga', 'ogv', 'png', 'psd', 'ra', 'ram', 'rgb', 'tif',);
+  $default = array('aif', 'art', 'avi', 'bmp', 'gif', 'ico', 'jpg', 'mov', 'mp3', 'mp4', 'mpg', 'oga', 'ogv', 'png', 'psd', 'ra', 'ram', 'rgb', 'tif');
   return $default;
 }
 
+/**
+ * Checks if a file is of a MIME type that is to be excluded from the index.
+ *
+ * The MIME types of excluded files are built and cached each time the file
+ * attachments settings form is saved.
+ *
+ * @param $filename
+ *   A string, the MIME type of the file.
+ *
+ * @return
+ *   Boolean, TRUE if the $filemime is allowed, otherwise FALSE.
+ */
 function apachesolr_attachments_allowed_mime($filemime) {
 
   $excluded = variable_get('apachesolr_attachment_excluded_mime', FALSE);
@@ -375,19 +330,19 @@ function apachesolr_attachments_allowed_mime($filemime) {
 }
 
 /**
- * Return all CCK fields that are of type 'file'
+ * Return all fields that are of type 'file'
  */
-function apachesolr_attachments_get_cck_file_fields() {
-  $file_fields = array();
-  if(module_exists('filefield')) {
-    $fields = content_fields();
-    foreach($fields as $key => $values){
-      if($values['type'] == 'filefield') {
-        $file_fields[] = $key;
+function apachesolr_attachments_get_field_names() {
+  $field_names = array();
+  if (module_exists('file')) {
+    $fields = field_info_fields();
+    foreach ($fields as $field_name => $field) {
+      if ($field['type'] == 'file') {
+        $field_names[] = $field_name;
       }
     }
   }
-  return $file_fields;
+  return $field_names;
 }
 
 /**
@@ -396,15 +351,14 @@ function apachesolr_attachments_get_cck_file_fields() {
  * @throws Exception
  */
 function apachesolr_attachments_get_attachment_text($file) {
-  // Any down-side to using realpath()?
-  $filepath = realpath($file->filepath);
+  $filepath = drupal_realpath($file['uri']);
   // Check that we have a valid filepath.
   if (!($filepath) || !is_file($filepath)) {
     return FALSE;
   }
 
   // No need to use java for plain text files.
-  if ($file->filemime == 'text/plain' || $file->filemime == 'text/x-diff') {
+  if ($file['filemime'] == 'text/plain' || $file['filemime'] == 'text/x-diff') {
     $text = file_get_contents($filepath);
     // TODO - try to detect encoding and convert to UTF-8.
     // Strip bad control characters.
@@ -413,14 +367,14 @@ function apachesolr_attachments_get_attachment_text($file) {
     return $text;
   }
 
-  $sha1 = sha1_file($filepath);
-  if ($sha1 === FALSE) {
+  $hash = hash('sha256', file_get_contents($filepath));
+  if ($hash === FALSE) {
     return FALSE;
   }
 
-  $cached = db_fetch_array(db_query("SELECT * FROM {apachesolr_attachments_files} WHERE fid = %d", $file->fid));
+  $cached = db_query("SELECT * FROM {apachesolr_attachments_files} WHERE fid = :fid", array(':fid' => $file['fid']))->fetchAssoc();
 
-  if (!is_null($cached['body']) && ($cached['sha1'] == $sha1)) {
+  if (!is_null($cached['body']) && ($cached['hash'] == $hash)) {
     // No need to re-extract.
     return $cached['body'];
   }
@@ -435,8 +389,7 @@ function apachesolr_attachments_get_attachment_text($file) {
     }
     catch (Exception $e) {
       // Exceptions from Solr may be transient, or indicate a problem with a specific file.
-      // Shortened project name because the watchdog limits type to 16 characters.
-      watchdog('ApacheSolrAttach', "Exception occured sending %filepath to Solr\n!message", array('%filepath' => $file->filepath, '!message' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
+      watchdog('Apache Solr Attachments', "Exception occured sending %filepath to Solr\n!message", array('%filepath' => $file['uri'], '!message' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
       return '';
     }
   }
@@ -444,7 +397,7 @@ function apachesolr_attachments_get_attachment_text($file) {
   $text = iconv("UTF-8", "UTF-8//IGNORE", $text);
   $text = trim(apachesolr_clean_text($text));
   // Save the extracted, cleaned text to the DB.
-  db_query("UPDATE {apachesolr_attachments_files} SET sha1 = '%s', body = '%s' WHERE fid = %d", $sha1, $text, $file->fid);
+  db_update('apachesolr_attachments_files')->fields(array('hash' => $hash, 'body' => $text))->condition('fid', $file['fid'])->execute();
 
   return $text;
 }
@@ -457,19 +410,19 @@ function apachesolr_attachments_get_attachment_text($file) {
 function apachesolr_attachments_extract_using_tika($filepath) {
   $tika_path = realpath(variable_get('apachesolr_attachments_tika_path', ''));
 
-  $tika = realpath($tika_path .'/'. variable_get('apachesolr_attachments_tika_jar', 'tika-0.3.jar'));
+  $tika = realpath($tika_path . '/' . variable_get('apachesolr_attachments_tika_jar', 'tika-0.3.jar'));
   if (!($tika) || !is_file($tika)) {
     throw new Exception(t('Invalid path or filename for tika application jar.'));
   }
 
   $java = variable_get('apachesolr_attachments_java', 'java');
   // By default force UTF-8 output.
-  $java_opts = ' ' . variable_get('apachesolr_attachments_java_opts', '-Dfile.encoding=UTF8');
-  $cmd = escapeshellcmd($java . $java_opts) .' -cp '. escapeshellarg($tika_path) .' -jar '. escapeshellarg($tika) .' -t '. escapeshellarg($filepath);
+  $java_opts = ' ' . variable_get('apachesolr_attachments_java_opts',  '-Dfile.encoding=UTF8');
+  $cmd = escapeshellcmd($java . $java_opts) . ' -cp ' . escapeshellarg($tika_path) . ' -jar ' . escapeshellarg($tika) . ' -t ' . escapeshellarg($filepath);
 
   // Add a work-around for a MAMP bug + java 1.5.
   if (strpos(ini_get('extension_dir'), 'MAMP/')) {
-    $cmd = 'export DYLD_LIBRARY_PATH=""; '. $cmd;
+    $cmd = 'export DYLD_LIBRARY_PATH=""; ' . $cmd;
   }
 
   return shell_exec($cmd);
@@ -491,7 +444,7 @@ function apachesolr_attachments_extract_using_solr($filepath) {
     'extractFormat' => 'text', // Matches the -t command for the tika CLI app.
   );
   // Construct a multi-part form-data POST body in $data.
-  $boundary = '--' . md5(uniqid(time()));
+  $boundary = '--' . md5(uniqid(REQUEST_TIME));
   $data = "--{$boundary}\r\n";
   // The 'filename' used here becomes the property name in the response.
   $data .= 'Content-Disposition: form-data; name="file"; filename="extracted"';

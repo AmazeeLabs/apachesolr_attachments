@@ -1,5 +1,5 @@
 
-Apache Solr Attachments for 6.x
+Apache Solr Attachments for 7.x
 
 Requires the ability to run java and installation of tika 0.3 or higher,
 or access to a solr server set up for content extraction (e.g. a Solr
