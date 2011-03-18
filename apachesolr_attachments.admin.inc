@@ -241,7 +241,7 @@ function apachesolr_attachments_confirm_submit($form, &$form_state) {
 function apachesolr_attachments_delete_index() {
   try {
     $solr = apachesolr_get_solr();
-    $solr->deleteByQuery("entity:file AND hash:" . apachesolr_site_hash());
+    $solr->deleteByQuery("entity_type:file AND hash:" . apachesolr_site_hash());
     $solr->commit();
     apachesolr_index_set_last_updated(REQUEST_TIME);
     apachesolr_clear_last_index('apachesolr_attachments');

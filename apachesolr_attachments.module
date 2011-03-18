@@ -190,28 +190,28 @@ function apachesolr_attachments_add_documents($node, $namespace) {
         $document->url = file_create_url($file['uri']);
         $document->path = file_stream_wrapper_get_instance_by_uri($file['uri'])->getDirectoryPath() . '/' . file_uri_target($file['uri']);
         $document->hash = $hash;
-        $document->entity = 'file';
+        $document->entity_type = 'file';
         $document->entity_id = $file['fid'];
         $document->site = url(NULL, array('absolute' => TRUE));
-        $document->nid = $node->nid;
-        $document->title = $file['filename'];
+        $document->is_nid = $node->nid;
+        $document->label = $file['filename'];
         $document->bundle = $node->type;
         $document->bundle_name = node_type_get_name($node);
-        $document->created = apachesolr_date_iso($file['timestamp']);
-        $document->changed = $document->created;
-        $document->status = $node->status;
-        $document->sticky = $node->sticky;
-        $document->promote = $node->promote;
-        $document->uid = $node->uid;
-        $document->name = $node->name;
+        $document->ds_created = apachesolr_date_iso($file['timestamp']);
+        $document->ds_changed = $document->ds_created;
+        $document->bs_status = $node->status;
+        $document->bs_sticky = $node->sticky;
+        $document->bs_promote = $node->promote;
+        $document->is_uid = $node->uid;
+        $document->ss_name = $node->name;
         if (empty($node->language)) {
           // 'und' is the language-neutral code in Drupal 7.
-          $document->language = LANGUAGE_NONE;
+          $document->ss_language = LANGUAGE_NONE;
         }
         else {
-          $document->language = $node->language;
+          $document->ss_language = $node->language;
         }
-        $document->body = apachesolr_clean_text($file['description']) . ' ' . $text;
+        $document->content = apachesolr_clean_text($file['description']) . ' ' . $text;
 
         $document->ss_filemime = $file['filemime'];
         $document->ss_file_node_title = apachesolr_clean_text($node->title);
@@ -323,11 +323,11 @@ function apachesolr_attachments_cron() {
 function apachesolr_attachments_apachesolr_modify_query(DrupalSolrQueryInterface $query, $caller) {
   // Fetch the extra file data on searches.
   if ($caller == 'apachesolr_search') {
-    $query->params['fl'] .= ',ss_filemime,ss_file_node_title,ss_file_node_url';
+    $query->params['fl'] .= ',is_nid,ss_filemime,ss_file_node_title,ss_file_node_url';
   }
   elseif ($caller == 'apachesolr_mlt') {
     // Exclude files from MLT results.
-    $query->add_filter('entity', 'file', TRUE);
+    $query->add_filter('entity_type', 'file', TRUE);
   }
 }
 
@@ -350,8 +350,9 @@ function apachesolr_attachments_file_result($doc, &$result, &$extra) {
   $result += array(
     'type' => t('File attachment'),
     'user' => theme('username', array('account' => $doc)),
-    'date' => $doc->created,
+    'date' => isset($doc->ds_created) ? $doc->ds_created : 0,
     'file' => $doc,
+    'uid' => $doc->is_uid,
   );
 }
 
@@ -370,7 +371,7 @@ function theme_apachesolr_search_snippets__file($vars) {
   $doc = $vars['doc'];
   $snippets = $vars['snippets'];
 
-  $node_link = t('<em>attached to:</em> !node_link', array('!node_link' => l($doc->ss_file_node_title, 'node/' . $doc->nid)));
+  $node_link = t('<em>attached to:</em> !node_link', array('!node_link' => l($doc->ss_file_node_title, 'node/' . $doc->is_nid)));
   if (module_exists('file')) {
     $file_type = t('!icon @filemime', array('@filemime' => $doc->ss_filemime, '!icon' => theme('file_icon', array('file' => (object) array('filemime' => $doc->ss_filemime)))));
   }
@@ -387,7 +388,7 @@ function theme_apachesolr_search_snippets__file($vars) {
 function apachesolr_attachments_remove_attachments_from_index($nid) {
   try {
     $solr = apachesolr_get_solr();
-    $solr->deleteByQuery("nid:{$nid} AND entity:file AND hash:" . apachesolr_site_hash());
+    $solr->deleteByQuery("is_nid:{$nid} AND entity_type:file AND hash:" . apachesolr_site_hash());
     $solr->commit();
   }
   catch (Exception $e) {

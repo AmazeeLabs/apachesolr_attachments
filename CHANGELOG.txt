@@ -4,4 +4,5 @@ Apache Solr Attachments x.x-x.x, xxxx-xx-xx
 
 Apache Solr Attachments 7.x-1.x, xxxx-xx-xx
 ------------------------------
+#1097086 by jpmckinney: Harmonize with new apachesolr schema.xml.
 #1034010 by jpmckinney, matason, pwolanin: Upgrade to Drupal 7 (D7).
