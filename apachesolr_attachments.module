@@ -211,7 +211,7 @@ function apachesolr_attachments_add_documents($node, $namespace) {
         else {
           $document->ss_language = $node->language;
         }
-        $document->content = apachesolr_clean_text($file['description']) . ' ' . $text;
+        $document->content = $file['filename'] . ' ' . apachesolr_clean_text($file['description']) . ' ' . $text;
 
         $document->ss_filemime = $file['filemime'];
         $document->ss_file_node_title = apachesolr_clean_text($node->title);
