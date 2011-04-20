@@ -184,7 +184,7 @@ function apachesolr_attachments_add_documents($node, $namespace) {
       $text = apachesolr_attachments_get_attachment_text($file);
 
       if ($text) {
-        $document = new Apache_Solr_Document();
+        $document = new ApacheSolrDocument();
         // A single file might be attached to multiple nodes.
         $document->id = apachesolr_document_id($file['fid'] . '-' . $node->nid, 'file');
         $document->url = file_create_url($file['uri']);
