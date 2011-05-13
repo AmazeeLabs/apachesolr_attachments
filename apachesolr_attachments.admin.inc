@@ -238,6 +238,9 @@ function apachesolr_attachments_confirm_submit($form, &$form_state) {
   $form_state['redirect'] = 'admin/config/search/apachesolr/attachments';
 }
 
+/**
+ * @see apachesolr_delete_index()
+ */
 function apachesolr_attachments_delete_index() {
   try {
     $solr = apachesolr_get_solr();
@@ -252,10 +255,6 @@ function apachesolr_attachments_delete_index() {
   }
   return FALSE;
 }
-
-/**
- * Indexing-related functions
- */
 
 /**
  * Return all non-excluded file attachments for a particular node

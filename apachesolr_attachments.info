@@ -1,8 +1,8 @@
 name = Apache Solr search attachments
-description = Searching file attachments with Solr
+description = Search file attachments with Solr
 dependencies[] = apachesolr
 dependencies[] = apachesolr_search
-package = Apache Solr
+package = Search Toolkit
 core = 7.x
 
 files[] = apachesolr_attachments.admin.inc
