@@ -12,12 +12,12 @@ function apachesolr_attachments_uninstall() {
   variable_del('apachesolr_attachments_tika_path');
   variable_del('apachesolr_attachments_tika_jar');
   variable_del('apachesolr_attachments_exclude_types');
-  variable_del('apachesolr_attachment_excluded_extensions');
-  variable_del('apachesolr_attachment_extract_using');
-  variable_del('apachesolr_attachment_excluded_mime');
+  variable_del('apachesolr_attachments_excluded_extensions');
+  variable_del('apachesolr_attachments_extract_using');
+  variable_del('apachesolr_attachments_excluded_mime');
   variable_del('apachesolr_attachments_cron_limit');
-  variable_del('apachesolr_attachements_cron_time_limit');
-  variable_del('apachesolr_attachements_cron_try');
+  variable_del('apachesolr_attachments_cron_time_limit');
+  variable_del('apachesolr_attachments_cron_try');
   apachesolr_clear_last_index('apachesolr_attachments');
 }
 
@@ -25,28 +25,22 @@ function apachesolr_attachments_uninstall() {
  * Implements hook_requirements().
  */
 function apachesolr_attachments_requirements($phase) {
-
   $requirements = array();
-  // Ensure translations don't break at install time
+  // Ensure translations don't break at install time.
   $t = get_t();
   if ($phase == 'runtime') {
-    if (variable_get('apachesolr_attachment_extract_using', 'tika') == 'tika') {
-      $temp = tempnam(file_directory_temp(), 'asa');
-      $java = variable_get('apachesolr_attachments_java', 'java');
-      exec($java . ' -version > ' . $temp . ' 2>&1');
-      $stderror = file_get_contents($temp);
-      $found = preg_match('/Runtime Environment/', $stderror);
-
-      if (!$found) {
+    if (variable_get('apachesolr_attachments_extract_using', 'tika') == 'tika') {
+      $tmp = tempnam(file_directory_temp(), 'apachesolr_attachments');
+      exec(variable_get('apachesolr_attachments_java', 'java') . ' -version > ' . $tmp . ' 2>&1');
+      if (!preg_match('/Runtime Environment/', file_get_contents($tmp))) {
         $requirements['apachesolr_attachments_java']  = array(
           'title' => $t('Java executable not found'),
-          'description' => $t('Could not execute a java command.  You may need to set the path of the correct java executable as the variable \'apachesolr_attachments_java\' in settings.php.'),
+          'description' => $t("Could not execute a java command. You may need to set the path of the correct java executable as the variable 'apachesolr_attachments_java' in settings.php."),
           'severity' => REQUIREMENT_ERROR,
         );
       }
     }
   }
-
   return $requirements;
 }
 
@@ -55,36 +49,36 @@ function apachesolr_attachments_requirements($phase) {
  */
 function apachesolr_attachments_schema() {
   $schema['apachesolr_attachments_files'] = array(
-    'description' => 'Stores information for uploaded files.',
+    'description' => 'Stores a record of when a file property changed to determine if it needs indexing by Solr.',
     'fields' => array(
       'fid' => array(
-        'description' => 'Primary Key: Unique files ID.',
+        'description' => 'The primary identifier for a file.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
       'nid' => array(
-        'description' => 'The {node}.nid where the file is attached.',
+        'description' => 'The primary identifier for the node to which the file is attached.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
       ),
       'removed' => array(
-        'description' => 'file is no longer attached.',
+        'description' => 'TRUE if the file is no longer attached to a node.',
         'type' => 'int',
         'unsigned' => TRUE,
         'default' => 0,
       ),
       'hash' => array(
-        'description' => 'file hash to check for changes.',
+        'description' => "A hash of the file's body, to check for changes.",
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
         'default' => '',
       ),
       'body' => array(
-        'description' => 'The cached body (extracted text) of the file (except for text files).',
+        'description' => 'The cached body (extracted text) of the file, unless it is a text file.',
         'type' => 'text',
         'not null' => FALSE,
         'size' => 'big',
@@ -98,4 +92,29 @@ function apachesolr_attachments_schema() {
   );
 
   return $schema;
+}
+
+/**
+ * Rename variables.
+ */
+function apachesolr_update_7000() {
+  $tmp = variable_get('apachesolr_attachment_extract_using', 'tika');
+  variable_set('apachesolr_attachments_extract_using', $tmp);
+  variable_del('apachesolr_attachment_extract_using');
+
+  $tmp = variable_get('apachesolr_attachment_excluded_extensions', implode(' ', apachesolr_attachments_default_excluded()));
+  variable_set('apachesolr_attachments_excluded_extensions', $tmp);
+  variable_del('apachesolr_attachment_excluded_extensions');
+
+  $tmp = variable_get('apachesolr_attachment_excluded_mime', FALSE);
+  variable_set('apachesolr_attachments_excluded_mime', $tmp);
+  variable_del('apachesolr_attachment_excluded_mime');
+
+  $tmp = variable_get('apachesolr_attachements_cron_time_limit', 15);
+  variable_set('apachesolr_attachments_cron_time_limit', $tmp);
+  variable_del('apachesolr_attachements_cron_time_limit');
+
+  $tmp = variable_get('apachesolr_attachements_cron_try', 20);
+  variable_set('apachesolr_attachments_cron_try', $tmp);
+  variable_del('apachesolr_attachements_cron_try');
 }

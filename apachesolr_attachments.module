@@ -13,7 +13,7 @@ define('EXTRACTING_SERVLET', 'extract/tika');
 function apachesolr_attachments_menu() {
   $items = array();
   $items['admin/config/search/apachesolr/attachments'] = array(
-    'title' => 'File attachments',
+    'title' => 'Attachments',
     'description' => 'Administer Apache Solr Attachments.',
     'page callback' => 'apachesolr_attachments_admin_page',
     'access arguments' => array('administer search'),
@@ -241,10 +241,10 @@ function apachesolr_attachments_add_documents($node, $namespace) {
 
         // Let modules add to the document.
         foreach (module_implements('apachesolr_update_index') as $module) {
-          $function = $module .'_apachesolr_update_index';
+          $function = $module . '_apachesolr_update_index';
           $function($document, $node, $namespace);
         }
-        drupal_alter('apachesolr_attachment_index', $document, $node, $file, $namespace);
+        drupal_alter('apachesolr_attachments_index', $document, $node, $file, $namespace);
 
         $documents[] = $document;
       }
@@ -263,13 +263,13 @@ function apachesolr_attachments_add_documents($node, $namespace) {
  * attachments.
  */
 function apachesolr_attachments_update_index() {
-  if (!variable_get('apachesolr_attachments_tika_path', '') && variable_get('apachesolr_attachment_extract_using', 'tika') == 'tika') {
+  if (!variable_get('apachesolr_attachments_tika_path', '') && variable_get('apachesolr_attachments_extract_using', 'tika') == 'tika') {
     return;
   }
   $start = REQUEST_TIME;
-  $cron_try = variable_get('apachesolr_attachements_cron_try', 20);
+  $cron_try = variable_get('apachesolr_attachments_cron_try', 20);
   $cron_limit = variable_get('apachesolr_attachments_cron_limit', 100);
-  $cron_time_limit = variable_get('apachesolr_attachements_cron_time_limit', 15);
+  $cron_time_limit = variable_get('apachesolr_attachments_cron_time_limit', 15);
   $num_tried = 0;
   module_load_include('inc', 'apachesolr_attachments', 'apachesolr_attachments.admin');
   do {

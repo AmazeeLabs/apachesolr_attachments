@@ -22,10 +22,10 @@ function apachesolr_attachments_admin_page() {
  */
 function apachesolr_attachments_settings($form) {
   $default = implode(' ', apachesolr_attachments_default_excluded());
-  $form['apachesolr_attachment_excluded_extensions'] = array(
+  $form['apachesolr_attachments_excluded_extensions'] = array(
     '#type' => 'textfield',
     '#title' => t('Excluded file extensions'),
-    '#default_value' => variable_get('apachesolr_attachment_excluded_extensions', $default),
+    '#default_value' => variable_get('apachesolr_attachments_excluded_extensions', $default),
     '#size' => 80,
     '#maxlength' => 255,
     '#description' => t('File extensions that are excluded from indexing. Separate extensions with a space and do not include the leading dot. Extensions are internally mapped to a MIME type, so it is not necessary to put variations that map to the same type (e.g. tif is sufficient for tif and tiff)'),
@@ -39,7 +39,7 @@ function apachesolr_attachments_settings($form) {
     ),
     '#default_value' => variable_get('apachesolr_attachments_exclude_types', 1),
   );
-  $form['apachesolr_attachment_extract_using'] = array(
+  $form['apachesolr_attachments_extract_using'] = array(
     '#type' => 'radios',
     '#title' => t('Extract using'),
     '#options' => array(
@@ -47,7 +47,7 @@ function apachesolr_attachments_settings($form) {
       'solr' => t('Solr (remote server)'),
     ),
     '#description' => t("Extraction will be faster if run locally using tika."),
-    '#default_value' => variable_get('apachesolr_attachment_extract_using', 'tika'),
+    '#default_value' => variable_get('apachesolr_attachments_extract_using', 'tika'),
   );
   $form['apachesolr_attachments_tika_path'] = array(
     '#type' => 'textfield',
@@ -76,10 +76,10 @@ function apachesolr_attachments_settings($form) {
     '#default_value' => variable_get('apachesolr_attachments_cron_limit', 100),
     '#options' => drupal_map_assoc(array(10, 20, 50, 100, 200)),
   );
-  $form['apachesolr_attachments-cron-settings']['apachesolr_attachements_cron_time_limit'] = array(
+  $form['apachesolr_attachments-cron-settings']['apachesolr_attachments_cron_time_limit'] = array(
     '#type' => 'select',
     '#title' => t('Maximum time to expend (sec)'),
-    '#default_value' => variable_get('apachesolr_attachements_cron_time_limit', 15),
+    '#default_value' => variable_get('apachesolr_attachments_cron_time_limit', 15),
     '#options' => drupal_map_assoc(array(5, 10, 15, 20, 25, 30, 45, 60)),
   );
 
@@ -95,7 +95,7 @@ function apachesolr_attachments_settings($form) {
  * @see apachesolr_attachments_settings()
  */
 function apachesolr_attachments_settings_validate($form, &$form_state) {
-  if ($form_state['values']['apachesolr_attachment_extract_using'] == 'tika') {
+  if ($form_state['values']['apachesolr_attachments_extract_using'] == 'tika') {
     $path = realpath($form_state['values']['apachesolr_attachments_tika_path']);
     if (!file_exists($path . '/' . $form_state['values']['apachesolr_attachments_tika_jar'])) {
       form_set_error('apachesolr_attachments_tika_path', t('Tika jar file not found at this path.'));
@@ -110,7 +110,7 @@ function apachesolr_attachments_settings_validate($form, &$form_state) {
  */
 function apachesolr_attachments_settings_submit($form, &$form_state) {
   // Delete this so it's rebuilt.
-  variable_del('apachesolr_attachment_excluded_mime');
+  variable_del('apachesolr_attachments_excluded_mime');
   drupal_set_message(t('If you changed the allowed file extensions, you may need to delete and re-index all attachments.'));
 }
 
@@ -306,11 +306,11 @@ function apachesolr_attachments_default_excluded() {
  */
 function apachesolr_attachments_allowed_mime($filemime) {
 
-  $excluded = variable_get('apachesolr_attachment_excluded_mime', FALSE);
+  $excluded = variable_get('apachesolr_attachments_excluded_mime', FALSE);
   if ($excluded === FALSE) {
     // Build the list of excluded MIME types.
     $excluded = array();
-    $extensions = variable_get('apachesolr_attachment_excluded_extensions', FALSE);
+    $extensions = variable_get('apachesolr_attachments_excluded_extensions', FALSE);
     if ($extensions !== FALSE) {
       $extensions = explode(' ', $extensions);
     }
@@ -324,7 +324,7 @@ function apachesolr_attachments_allowed_mime($filemime) {
         $excluded[$mime] = 1;
       }
     }
-    variable_set('apachesolr_attachment_excluded_mime', $excluded);
+    variable_set('apachesolr_attachments_excluded_mime', $excluded);
   }
   return empty($excluded[$filemime]);
 }
@@ -379,7 +379,7 @@ function apachesolr_attachments_get_attachment_text($file) {
     return $cached['body'];
   }
 
-  if (variable_get('apachesolr_attachment_extract_using', 'tika') == 'tika') {
+  if (variable_get('apachesolr_attachments_extract_using', 'tika') == 'tika') {
     $text = apachesolr_attachments_extract_using_tika($filepath);
   }
   else {
