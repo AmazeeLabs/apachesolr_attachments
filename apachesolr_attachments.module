@@ -135,138 +135,6 @@ function apachesolr_attachments_apachesolr_document_handlers($type, $namespace) 
 }
 
 /**
- * Callback for apachesolr_index_nodes().
- *
- * Adds a document for each indexable file attachment for the given node ID.
- *
- * @see apachesolr_node_to_document()
- */
-function apachesolr_attachments_add_documents($node, $namespace) {
-  $documents = array();
-  $hash = apachesolr_site_hash();
-  // Let any module exclude this node from the index.
-  $build_document = TRUE;
-  foreach (module_implements('apachesolr_node_exclude') as $module) {
-    $exclude = module_invoke($module, 'apachesolr_node_exclude', $node, $namespace);
-    if (!empty($exclude)) {
-      $build_document = FALSE;
-    }
-  }
-
-  if ($build_document) {
-    // Since there is no notification for an attachment being unassociated with a
-    // node (but that action will trigger it to be indexed again), we check for
-    // fids that were added before but no longer present on this node.
-    $fids = array();
-    $result = db_query("SELECT fid FROM {apachesolr_attachments_files} WHERE nid = :nid", array(':nid' => $node->nid));
-    foreach ($result as $row) {
-      $fids[$row->fid] = $row->fid;
-    }
-
-    $files = apachesolr_attachments_get_indexable_files($node);
-
-    // Find deleted files.
-    $missing_fids = array_diff_key($fids, $files);
-    if ($missing_fids) {
-      db_update('apachesolr_attachments_files')->fields(array('removed' => 1))->condition('fid', $missing_fids, 'IN')->execute();
-    }
-    $new_files = array_diff_key($files, $fids);
-
-    // Add new files.
-    foreach ($new_files as $file) {
-      db_insert('apachesolr_attachments_files')->fields(array(
-        'fid' => $file['fid'],
-        'nid' => $node->nid,
-        'removed' => 0,
-        'hash' => '',
-      ))->execute();
-    }
-
-    foreach ($files as $file) {
-      $text = apachesolr_attachments_get_attachment_text($file);
-      if ($text) {
-        $document = new ApacheSolrDocument();
-        // A single file might be attached to multiple nodes.
-        $document->id = apachesolr_document_id($file['fid'] . '-' . $node->nid, 'file');
-        $document->site = url(NULL, array('absolute' => TRUE));
-        $document->hash = $hash;
-        $document->entity_type = 'file';
-        $document->entity_id = $file['fid'];
-        $document->bundle = $node->type;
-        $document->bundle_name = node_type_get_name($node);
-        $document->label = $file['filename'];
-        $document->is_nid = $node->nid;
-        $document->url = file_create_url($file['uri']);
-        $document->path = file_stream_wrapper_get_instance_by_uri($file['uri'])->getDirectoryPath() . '/' . file_uri_target($file['uri']);
-
-        $document->content = $file['filename'] . ' ' . apachesolr_clean_text($file['description']) . ' ' . $text;
-
-        $document->ss_name = $node->name;
-        // We want the name to ale be searchable for keywords.
-        $document->tos_name = $node->name;
-
-        // Everything else uses dynamic fields
-        $document->is_uid = $node->uid;
-        $document->bs_status = $node->status;
-        $document->bs_sticky = $node->sticky;
-        $document->bs_promote = $node->promote;
-        $document->is_tnid = $node->tnid;
-        $document->bs_translate = $node->translate;
-        if (empty($node->language)) {
-          // 'und' is the language-neutral code in Drupal 7.
-          $document->ss_language = LANGUAGE_NONE;
-        }
-        else {
-          $document->ss_language = $node->language;
-        }
-        $document->ds_created = apachesolr_date_iso($file['timestamp']);
-        $document->ds_changed = $document->ds_created;
-
-        // apachesolr_attachments-specific fields.
-        $document->ss_filemime = $file['filemime'];
-        $document->ss_file_node_title = apachesolr_clean_text($node->title);
-        $document->ss_file_node_url = url('node/' . $node->nid, array('absolute' => TRUE));
-
-        // Add taxonomy to document.
-        $indexed_fields = apachesolr_entity_fields('node');
-        foreach ($indexed_fields as $index_key => $field_info) {
-          if ($field_info['field']['type'] == 'taxonomy_term_reference') { // Add only taxonomy.
-            $field_name = $field_info['field']['field_name'];
-            // See if the node has fields that can be indexed
-            if (isset($node->{$field_name})) {
-              // Got a field.
-              $function = $field_info['indexing_callback'];
-              if ($function && function_exists($function)) {
-                // NOTE: This function should always return an array.  One
-                // node field may be indexed to multiple Solr fields.
-                $fields = $function($node, $field_name, $index_key, $field_info);
-                foreach ($fields as $field) {
-                  // It's fine to use this method also for single value fields.
-                  $document->setMultiValue($field['key'], $field['value']);
-                }
-              }
-            }
-          }
-        }
-
-        // Let modules add to the document.
-        foreach (module_implements('apachesolr_update_index') as $module) {
-          $function = $module . '_apachesolr_update_index';
-          $function($document, $node, $namespace);
-        }
-        drupal_alter('apachesolr_attachments_index', $document, $node, $file, $namespace);
-
-        $documents[] = $document;
-      }
-      else {
-        watchdog('Apache Solr Attachments', 'Could not extract any indexable text from %filepath', array('%filepath' => $file['filepath']), WATCHDOG_WARNING);
-      }
-    }
-  }
-  return $documents;
-}
-
-/**
  * Implements hook_update_index().
  *
  * Search content types and add any field that is a file type that we know how
@@ -276,12 +144,12 @@ function apachesolr_attachments_add_documents($node, $namespace) {
  */
 function apachesolr_attachments_update_index() {
   if (variable_get('apachesolr_attachments_extract_using', 'tika') == 'solr' || variable_get('apachesolr_attachments_tika_path', '')) {
+    module_load_include('inc', 'apachesolr_attachments', 'apachesolr_attachments.index');
     $start = REQUEST_TIME;
     $cron_try = variable_get('apachesolr_attachments_cron_try', 20);
     $cron_limit = variable_get('apachesolr_attachments_cron_limit', 100);
     $cron_time_limit = variable_get('apachesolr_attachments_cron_time_limit', 15);
     $num_tried = 0;
-    module_load_include('inc', 'apachesolr_attachments', 'apachesolr_attachments.admin');
     do {
       $rows = apachesolr_get_nodes_to_index('apachesolr_attachments', $cron_try);
       // Calls apachesolr_attachments_apachesolr_document_handlers() and
@@ -306,6 +174,30 @@ function apachesolr_attachments_node_delete($node) {
   }
   else {
     db_update('apachesolr_attachments_files')->fields(array('removed' => 1))->condition('nid', $node->nid)->execute();
+  }
+}
+
+/**
+ * For a particular node ID, remove all file attachments from the Solr index.
+ *
+ * @see apachesolr_delete_node_from_index()
+ */
+function apachesolr_attachments_remove_attachments_from_index($nid) {
+  static $failed = FALSE;
+  if ($failed) {
+    return FALSE;
+  }
+  try {
+    $solr = apachesolr_get_solr();
+    $solr->deleteByQuery("is_nid:$nid AND entity_type:file AND hash:" . apachesolr_site_hash());
+    $solr->commit();
+    return TRUE;
+  }
+  catch (Exception $e) {
+    watchdog('Apache Solr Attachments', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
+    // Don't keep trying queries if they are failing.
+    $failed = TRUE;
+    return FALSE;
   }
 }
 
@@ -409,25 +301,12 @@ function theme_apachesolr_search_snippets__file($vars) {
 }
 
 /**
- * For a particular node ID, remove all file attachments from the Solr index.
+ * Provides a default list of filename extensions to exclude from the index.
  *
- * @see apachesolr_delete_node_from_index()
+ * @return
+ *   An array of file extensions.
  */
-function apachesolr_attachments_remove_attachments_from_index($nid) {
-  static $failed = FALSE;
-  if ($failed) {
-    return FALSE;
-  }
-  try {
-    $solr = apachesolr_get_solr();
-    $solr->deleteByQuery("is_nid:$nid AND entity_type:file AND hash:" . apachesolr_site_hash());
-    $solr->commit();
-    return TRUE;
-  }
-  catch (Exception $e) {
-    watchdog('Apache Solr Attachments', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
-    // Don't keep trying queries if they are failing.
-    $failed = TRUE;
-    return FALSE;
-  }
+function apachesolr_attachments_default_excluded() {
+  $default = array('aif', 'art', 'avi', 'bmp', 'gif', 'ico', 'jpg', 'mov', 'mp3', 'mp4', 'mpg', 'oga', 'ogv', 'png', 'psd', 'ra', 'ram', 'rgb', 'tif');
+  return $default;
 }
