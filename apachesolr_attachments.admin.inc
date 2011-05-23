@@ -54,7 +54,7 @@ function apachesolr_attachments_settings($form) {
     '#title' => t('Tika directory path'),
     '#size' => 80,
     '#maxlength' => 100,
-    '#description' => t("The full path to tika directory.  All library jars must be in the same directory."),
+    '#description' => t("The full path to the tika directory. All library jars must be in the same directory. If on Windows, use forward slashes in the path."),
     '#default_value' => variable_get('apachesolr_attachments_tika_path', ''),
   );
   $form['apachesolr_attachments_tika_jar'] = array(
