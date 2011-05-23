@@ -6,6 +6,15 @@
  */
 
 /**
+ * Implements hook_enable().
+ */
+function apachesolr_attachments_enable() {
+  $active = variable_get('search_active_modules', array('node', 'user'));
+  $active[] = 'apachesolr_attachments';
+  variable_set('search_active_modules', array_unique($active));
+}
+
+/**
  * Implements hook_uninstall().
  */
 function apachesolr_attachments_uninstall() {
@@ -19,6 +28,13 @@ function apachesolr_attachments_uninstall() {
   variable_del('apachesolr_attachments_cron_time_limit');
   variable_del('apachesolr_attachments_cron_try');
   apachesolr_clear_last_index('apachesolr_attachments');
+
+  $active = variable_get('search_active_modules', array('node', 'user'));
+  $index = array_search('apachesolr_attachments', $active);
+  if ($index !== FALSE) {
+    unset($active[$index]);
+    variable_set('search_active_modules', $active);
+  }
 }
 
 /**
@@ -117,4 +133,13 @@ function apachesolr_attachments_update_7000() {
   $tmp = variable_get('apachesolr_attachements_cron_try', 20);
   variable_set('apachesolr_attachments_cron_try', $tmp);
   variable_del('apachesolr_attachements_cron_try');
+}
+
+/**
+ * Enable apachesolr_attachments.
+ */
+function apachesolr_attachments_update_7001() {
+  $active = variable_get('search_active_modules', array('node', 'user'));
+  $active[] = 'apachesolr_attachments';
+  variable_set('search_active_modules', array_unique($active));
 }
