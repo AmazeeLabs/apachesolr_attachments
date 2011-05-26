@@ -4,6 +4,7 @@ Apache Solr Attachments x.x-x.x, xxxx-xx-xx
 
 Apache Solr Attachments 7.x-1.x, xxxx-xx-xx
 ------------------------------
+#1162608 by rdebieux, jpmckinney: Remove file from index if node unpublished.
 #1161802 by setvik, jpmckinney: apachesolr_attachments_update_index is never called so no files indexed.
 #1162492 by jpmckinney: Add helpful message for Windows users.
 #1100306 by jpmckinney: Search by filename.

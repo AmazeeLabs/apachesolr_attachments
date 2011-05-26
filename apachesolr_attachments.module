@@ -161,6 +161,19 @@ function apachesolr_attachments_update_index() {
 }
 
 /**
+ * Implements hook_node_update().
+ *
+ * If node is unpublished, mark all associated attachments as removed.
+ *
+ * @see apachesolr_node_delete()
+ */
+function apachesolr_attachments_node_update($node) {
+  if (!$node->status) {
+    apachesolr_attachments_node_delete($node);
+  }
+}
+
+/**
  * Implements hook_node_delete().
  *
  * Mark all associated attachments as removed.
