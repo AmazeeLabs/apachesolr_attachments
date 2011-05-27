@@ -294,6 +294,10 @@ function apachesolr_attachments_extract_using_tika($filepath) {
     $cmd = 'export DYLD_LIBRARY_PATH=""; ' . $cmd;
   }
 
+  if (mb_detect_encoding($filepath, 'ASCII,UTF-8', true) == 'UTF-8') {
+    $cmd = 'export LANG="en_US.utf-8"; ' . $cmd;
+  }
+
   return shell_exec($cmd);
 }
 
