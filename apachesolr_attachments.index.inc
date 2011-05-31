@@ -280,23 +280,26 @@ function apachesolr_attachments_extract_using_tika($filepath) {
   $tika_path = realpath(variable_get('apachesolr_attachments_tika_path', ''));
 
   $tika = realpath($tika_path . '/' . variable_get('apachesolr_attachments_tika_jar', 'tika-0.3.jar'));
-  if (!($tika) || !is_file($tika)) {
+  if (!$tika || !is_file($tika)) {
     throw new Exception(t('Invalid path or filename for tika application jar.'));
   }
 
-  $java = variable_get('apachesolr_attachments_java', 'java');
-  // By default force UTF-8 output.
-  $java_opts = ' ' . variable_get('apachesolr_attachments_java_opts',  '-Dfile.encoding=UTF8');
-  $cmd = escapeshellcmd($java . $java_opts) . ' -cp ' . escapeshellarg($tika_path) . ' -jar ' . escapeshellarg($tika) . ' -t ' . escapeshellarg($filepath);
-
+  $cmd = '';
   // Add a work-around for a MAMP bug + java 1.5.
   if (strpos(ini_get('extension_dir'), 'MAMP/')) {
-    $cmd = 'export DYLD_LIBRARY_PATH=""; ' . $cmd;
+    $cmd .= 'export DYLD_LIBRARY_PATH=""; ';
+  }
+  // Support UTF-8 encoded filenames.
+  if (mb_detect_encoding($filepath, 'ASCII,UTF-8', true) == 'UTF-8') {
+    $cmd .= 'export LANG="en_US.utf-8"; ';
+    setlocale(LC_CTYPE, 'UTF8', 'en_US.UTF-8');
   }
 
-  if (mb_detect_encoding($filepath, 'ASCII,UTF-8', true) == 'UTF-8') {
-    $cmd = 'export LANG="en_US.utf-8"; ' . $cmd;
-  }
+  // By default force UTF-8 output.
+  $cmd .= escapeshellcmd(variable_get('apachesolr_attachments_java', 'java')) . ' ' .
+    escapeshellarg(variable_get('apachesolr_attachments_java_opts', '-Dfile.encoding=UTF8')) .
+    ' -cp ' . escapeshellarg($tika_path) . ' -jar ' . escapeshellarg($tika) .
+    ' -t '. escapeshellarg($filepath);
 
   return shell_exec($cmd);
 }
