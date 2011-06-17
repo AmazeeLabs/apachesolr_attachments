@@ -4,6 +4,7 @@ Apache Solr Attachments x.x-x.x, xxxx-xx-xx
 
 Apache Solr Attachments 7.x-1.x, xxxx-xx-xx
 ------------------------------
+#1188014 by drasgardian: Argument 2 passed to drupal_http_request() must be an array.
 #1162252 by steveoriol, jpmckinney: Allow UTF-8 characters in filenames.
 
 Apache Solr Attachments 7.x-1.0, 2011-05-26

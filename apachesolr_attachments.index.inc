@@ -328,6 +328,11 @@ function apachesolr_attachments_extract_using_solr($filepath) {
   $data .= file_get_contents($filepath);
   $data .= "\r\n--{$boundary}--\r\n";
   $headers = array('Content-Type' => 'multipart/form-data; boundary=' . $boundary);
-  $response = $solr->makeServletRequest(EXTRACTING_SERVLET, $params, 'POST', $headers, $data);
+  $options = array(
+    'method' => 'POST',
+    'headers' => $headers,
+    'data' => $data,
+  );
+  $response = $solr->makeServletRequest(EXTRACTING_SERVLET, $params, $options);
   return array($response->extracted, $response->extracted_metadata);
 }
