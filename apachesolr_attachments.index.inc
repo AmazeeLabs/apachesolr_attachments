@@ -222,7 +222,11 @@ function apachesolr_attachments_get_field_names() {
 function apachesolr_attachments_get_attachment_text($file) {
   $filepath = drupal_realpath($file['uri']);
   // Check that we have a valid filepath.
-  if (!($filepath) || !is_file($filepath)) {
+  if (!$filepath) {
+    return FALSE;
+  }
+  elseif (!is_file($filepath)) {
+    watchdog('Apache Solr Attachments', '%filepath is not a valid file path', array('%filepath' => $file['uri']), WATCHDOG_WARNING);
     return FALSE;
   }
 
@@ -238,6 +242,7 @@ function apachesolr_attachments_get_attachment_text($file) {
 
   $hash = hash('sha256', file_get_contents($filepath));
   if ($hash === FALSE) {
+    watchdog('Apache Solr Attachments', 'sha256 hash algorithm is not supported', NULL, WATCHDOG_ERROR);
     return FALSE;
   }
 
@@ -258,13 +263,15 @@ function apachesolr_attachments_get_attachment_text($file) {
     }
     catch (Exception $e) {
       // Exceptions from Solr may be transient, or indicate a problem with a specific file.
-      watchdog('Apache Solr Attachments', "Exception occured sending %filepath to Solr\n!message", array('%filepath' => $file['uri'], '!message' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
-      return '';
+      watchdog('Apache Solr Attachments', "Exception occurred sending %filepath to Solr\n!message", array('%filepath' => $file['uri'], '!message' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
+      return FALSE;
     }
   }
+
   // Strip bad control characters.
   $text = iconv("UTF-8", "UTF-8//IGNORE", $text);
   $text = trim(apachesolr_clean_text($text));
+
   // Save the extracted, cleaned text to the DB.
   db_update('apachesolr_attachments_files')->fields(array('hash' => $hash, 'body' => $text))->condition('fid', $file['fid'])->execute();
 
