@@ -101,10 +101,9 @@ function apachesolr_attachments_schema() {
       ),
     ),
     'indexes' => array(
-      'nid' => array('nid'),
       'removed' => array('removed'),
     ),
-    'primary key' => array('fid'),
+    'primary key' => array('fid', 'nid'),
   );
 
   return $schema;
@@ -142,4 +141,12 @@ function apachesolr_attachments_update_7001() {
   $active = variable_get('search_active_modules', array('node', 'user'));
   $active[] = 'apachesolr_attachments';
   variable_set('search_active_modules', array_unique($active));
+}
+
+/**
+ * Change DB index to allow files attached to multiple nodes.
+ */
+function apachesolr_attachments_update_7002() {
+  db_query('ALTER TABLE {apachesolr_attachments_files} DROP INDEX `nid`');
+  db_query('ALTER TABLE {apachesolr_attachments_files} DROP PRIMARY KEY, ADD PRIMARY KEY (`fid`, `nid`)');
 }
