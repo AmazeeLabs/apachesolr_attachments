@@ -61,8 +61,8 @@ function apachesolr_attachments_settings($form) {
     '#type' => 'textfield',
     '#title' => t('Tika jar file'),
     '#size' => 20,
-    '#description' => t("The name of the tika CLI application jar file, e.g. tika-0.3.jar or tika-app-0.4.jar."),
-    '#default_value' => variable_get('apachesolr_attachments_tika_jar', 'tika-0.3.jar'),
+    '#description' => t("The name of the tika CLI application jar file, e.g. tika-app-1.1.jar."),
+    '#default_value' => variable_get('apachesolr_attachments_tika_jar', 'tika-app-1.1.jar'),
   );
   $form['apachesolr_attachments-cron-settings'] = array(
     '#type' => 'fieldset',
