@@ -169,6 +169,7 @@ function apachesolr_attachments_solr_reindex() {
     // Clean the table
     db_delete($indexer_table)
       ->condition('entity_type', 'file')
+      ->isNull('body')
       ->execute();
     $files = _apachesolr_attachments_get_all_files();
     // If we do not have files, return success

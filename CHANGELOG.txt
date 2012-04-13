@@ -4,6 +4,7 @@ Apache Solr Attachments x.x-x.x, xxxx-xx-xx
 
 Apache Solr Attachments 7.x-1.x, xxxx-xx-xx
 ------------------------------
+#1531988 by Nick_vh: Added Keep extracted text in cache longer. Even when re-index is issued.
 #1393540 by Nick_vh, drasgardian, pwolanin | ericmulder1980: Fixed Upgrade apachesolr_attachments() to co-operate with latest beta of apachesolr.
 #1515530 by pwolanin: update README and admin page for newer tika versions.
 #1189864 by jpmckinney: More verbose logging during text extraction.
