@@ -9,9 +9,6 @@
  * Implements hook_enable().
  */
 function apachesolr_attachments_enable() {
-  $active = variable_get('search_active_modules', array('node', 'user'));
-  $active[] = 'apachesolr_attachments';
-  variable_set('search_active_modules', array_unique($active));
 }
 
 /**
@@ -20,21 +17,9 @@ function apachesolr_attachments_enable() {
 function apachesolr_attachments_uninstall() {
   variable_del('apachesolr_attachments_tika_path');
   variable_del('apachesolr_attachments_tika_jar');
-  variable_del('apachesolr_attachments_exclude_types');
   variable_del('apachesolr_attachments_excluded_extensions');
   variable_del('apachesolr_attachments_extract_using');
   variable_del('apachesolr_attachments_excluded_mime');
-  variable_del('apachesolr_attachments_cron_limit');
-  variable_del('apachesolr_attachments_cron_time_limit');
-  variable_del('apachesolr_attachments_cron_try');
-  apachesolr_clear_last_index('apachesolr_attachments');
-
-  $active = variable_get('search_active_modules', array('node', 'user'));
-  $index = array_search('apachesolr_attachments', $active);
-  if ($index !== FALSE) {
-    unset($active[$index]);
-    variable_set('search_active_modules', $active);
-  }
 }
 
 /**
@@ -50,7 +35,8 @@ function apachesolr_attachments_requirements($phase) {
       exec(variable_get('apachesolr_attachments_java', 'java') . ' -version > ' . $tmp . ' 2>&1');
       if (!preg_match('/Runtime Environment/', file_get_contents($tmp))) {
         $requirements['apachesolr_attachments_java']  = array(
-          'title' => $t('Java executable not found'),
+          'title' => $t('Apache Solr Attachments'),
+          'value' => $t('Java executable not found'),
           'description' => $t("Could not execute a java command. You may need to set the path of the correct java executable as the variable 'apachesolr_attachments_java' in settings.php."),
           'severity' => REQUIREMENT_ERROR,
         );
@@ -64,48 +50,75 @@ function apachesolr_attachments_requirements($phase) {
  * Implements hook_schema().
  */
 function apachesolr_attachments_schema() {
-  $schema['apachesolr_attachments_files'] = array(
-    'description' => 'Stores a record of when a file property changed to determine if it needs indexing by Solr.',
-    'fields' => array(
-      'fid' => array(
-        'description' => 'The primary identifier for a file.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-      ),
-      'nid' => array(
-        'description' => 'The primary identifier for the node to which the file is attached.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'removed' => array(
-        'description' => 'TRUE if the file is no longer attached to a node.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'default' => 0,
-      ),
-      'hash' => array(
-        'description' => "A hash of the file's body, to check for changes.",
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-      'body' => array(
-        'description' => 'The cached body (extracted text) of the file, unless it is a text file.',
-        'type' => 'text',
-        'not null' => FALSE,
-        'size' => 'big',
-      ),
-    ),
-    'indexes' => array(
-      'removed' => array('removed'),
-    ),
-    'primary key' => array('fid', 'nid'),
+  $types = array(
+    'file' => 'apachesolr_index_entities_file',
   );
-
+  foreach ($types as $type => $table) {
+    $schema[$table] = array(
+      'description' => t('Stores a record of when an entity changed to determine if it needs indexing by Solr.'),
+      'fields' => array(
+        'entity_type' => array(
+          'description' => t('The type of entity.'),
+          'type' => 'varchar',
+          'length' => 128,
+          'not null' => TRUE,
+        ),
+        'entity_id' => array(
+          'description' => t('The primary identifier for an entity.'),
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'bundle' => array(
+          'description' => t('The bundle to which this entity belongs.'),
+          'type' => 'varchar',
+          'length' => 128,
+          'not null' => TRUE,
+        ),
+        'status' => array(
+          'description' => t('Boolean indicating whether the entity is visible to non-administrators (eg, published for nodes).'),
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 1,
+        ),
+        'changed' => array(
+          'description' => t('The Unix timestamp when an entity was changed.'),
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+        'parent_entity_type' => array(
+          'description' => t('The type of entity.'),
+          'type' => 'varchar',
+          'length' => 128,
+          'not null' => FALSE,
+        ),
+        'parent_entity_id' => array(
+          'description' => t('The type of the parent entity.'),
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => FALSE,
+        ),
+        'hash' => array(
+          'description' => "A hash of the file's body, to check for changes.",
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => TRUE,
+          'default' => '',
+        ),
+        'body' => array(
+          'description' => 'The cached body (extracted text) of the file, unless it is a text file.',
+          'type' => 'text',
+          'not null' => FALSE,
+          'size' => 'big',
+        ),
+      ),
+      'indexes' => array(
+        'changed' => array('changed', 'status'),
+      ),
+      'primary key' => array('entity_id', 'parent_entity_id', 'parent_entity_type'),
+    );
+  }
   return $schema;
 }
 
@@ -147,6 +160,97 @@ function apachesolr_attachments_update_7001() {
  * Change DB index to allow files attached to multiple nodes.
  */
 function apachesolr_attachments_update_7002() {
-  db_query('ALTER TABLE {apachesolr_attachments_files} DROP INDEX `nid`');
-  db_query('ALTER TABLE {apachesolr_attachments_files} DROP PRIMARY KEY, ADD PRIMARY KEY (`fid`, `nid`)');
+  // Removed
+}
+
+
+
+/**
+ * Change DB tables to support multiple entity indexing.
+ */
+function apachesolr_attachments_update_7003() {
+  $types = array(
+    'file' => 'apachesolr_index_entities_file',
+  );
+  foreach ($types as $type => $table) {
+    $schema[$table] = array(
+      'description' => t('Stores a record of when an entity changed to determine if it needs indexing by Solr.'),
+      'fields' => array(
+        'entity_type' => array(
+          'description' => t('The type of entity.'),
+          'type' => 'varchar',
+          'length' => 128,
+          'not null' => TRUE,
+        ),
+        'entity_id' => array(
+          'description' => t('The primary identifier for an entity.'),
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'bundle' => array(
+          'description' => t('The bundle to which this entity belongs.'),
+          'type' => 'varchar',
+          'length' => 128,
+          'not null' => TRUE,
+        ),
+        'status' => array(
+          'description' => t('Boolean indicating whether the entity is visible to non-administrators (eg, published for nodes).'),
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 1,
+        ),
+        'changed' => array(
+          'description' => t('The Unix timestamp when an entity was changed.'),
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+        'parent_entity_type' => array(
+          'description' => t('The type of entity.'),
+          'type' => 'varchar',
+          'length' => 128,
+          'not null' => FALSE,
+        ),
+        'parent_entity_id' => array(
+          'description' => t('The type of the parent entity.'),
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => FALSE,
+        ),
+        'hash' => array(
+          'description' => "A hash of the file's body, to check for changes.",
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => TRUE,
+          'default' => '',
+        ),
+        'body' => array(
+          'description' => 'The cached body (extracted text) of the file, unless it is a text file.',
+          'type' => 'text',
+          'not null' => FALSE,
+          'size' => 'big',
+        ),
+      ),
+      'indexes' => array(
+        'changed' => array('changed', 'status'),
+      ),
+      'primary key' => array('entity_id'),
+    );
+    if (db_table_exists('apachesolr_attachments_files') && !db_table_exists($table)) {
+      db_create_table('apachesolr_index_entities_file', $schema[$table]);
+    }
+  }
+  if (db_table_exists('apachesolr_attachments_files')) {
+    db_drop_table('apachesolr_attachments_files');
+  }
+
+  // Repopulate our file table
+  apachesolr_attachments_solr_reindex();
+
+  // Remove old variables
+  variable_del('apachesolr_attachments_exclude_types');
+  variable_del('apachesolr_attachments_cron_limit');
+  variable_del('apachesolr_attachments_cron_time_limit');
+  variable_del('apachesolr_attachments_cron_try');
 }
