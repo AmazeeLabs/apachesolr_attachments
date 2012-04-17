@@ -74,7 +74,6 @@ function apachesolr_attachments_solr_document(ApacheSolrDocument $document, $fil
   module_load_include('inc', 'apachesolr_attachments', 'apachesolr_attachments.index');
   $documents = array();
 
-
   $text = apachesolr_attachments_get_attachment_text($file);
   // Text is saved in the index table. Will be used by the node indexing if
   // available.
@@ -105,6 +104,11 @@ function apachesolr_attachments_solr_document(ApacheSolrDocument $document, $fil
 
         //Get the callback array to add stuff to the document
         $callbacks = apachesolr_entity_get_callback($parent_entity_type, 'document callback');
+        // Skip invalid entity types
+        if (empty($callbacks)) {
+          continue;
+        }
+
         $build_documents = array();
         foreach ($callbacks as $callback) {
           // Call a type-specific callback to add stuff to the document.
@@ -115,7 +119,7 @@ function apachesolr_attachments_solr_document(ApacheSolrDocument $document, $fil
         $filedocument = reset($build_documents);
 
         // Build our separate document and overwrite basic information
-        $filedocument->id = apachesolr_document_id($file->fid . '-' . $parent_entity_id, 'file');
+        $filedocument->id = apachesolr_document_id($file->fid . '-' . $parent_entity_type . '-' . $parent_entity_id, $entity_type);
         $filedocument->url = file_create_url($file->uri);
         $filedocument->path = file_stream_wrapper_get_instance_by_uri($file->uri)->getExternalUrl();
 
@@ -142,7 +146,7 @@ function apachesolr_attachments_solr_document(ApacheSolrDocument $document, $fil
         // belongs to which entity
         // It does not load the complete entity in to the index because that
         // would dramatically increase the index size and processing time
-        $filedocument->zm_parent_entity = serialize($small_parent_entity);
+        $filedocument->zm_parent_entity = drupal_json_encode($small_parent_entity);
         $filedocument->sm_parent_entity_bundle = $parent_entity_type . "-" . $parent_entity_bundle;
         $filedocument->sm_parent_entity_type = $parent_entity_type;
 
@@ -172,6 +176,7 @@ function apachesolr_attachments_solr_reindex() {
       ->isNull('body')
       ->execute();
     $files = _apachesolr_attachments_get_all_files();
+
     // If we do not have files, return success
     if (empty($files)) {
       return TRUE;
@@ -209,12 +214,11 @@ function _apachesolr_attachments_get_all_files() {
         $query = new ApachesolrAttachmentsEntityFieldQuery();
         $results_query = $query
           ->entityCondition('entity_type', $entity_type)
-          ->propertyCondition('status', 1)
           ->fieldCondition($field_info['field_name'])
           ->addTag('apachesolr_attachments_solr_reindex')
           ->addMetaData('field_fid_key', $field_info['field_name'] . '_fid')
           ->execute();
-        $results = array_merge($results, $results_query);
+        $results = array_merge_recursive($results, $results_query);
       }
     }
   }
@@ -231,6 +235,13 @@ function apachesolr_attachments_query_apachesolr_attachments_solr_reindex_alter(
   $query->addField($fields['entity_id']['table'], $query->getMetaData('field_fid_key'), $query->getMetaData('field_fid_key'));
 }
 
+/**
+ * Status callback for the files. Optimized so it has a quick return
+ * when available
+ * @param type $entity_id
+ * @param type $entity_type
+ * @return type
+ */
 function apachesolr_attachments_status_callback($entity_id, $entity_type) {
   module_load_include('inc', 'apachesolr_attachments', 'apachesolr_attachments.index');
   // Make sure we have a boolean value.
@@ -238,16 +249,28 @@ function apachesolr_attachments_status_callback($entity_id, $entity_type) {
   if (!$entity_id) {
     return FALSE;
   }
+  // Check if the parent entity was not excluded
+  if (apachesolr_attachments_excluded_entities($entity_id, $entity_type) == FALSE) {
+    return FALSE;
+  }
 
   // load the entity and reset cache
   $entities = entity_load($entity_type, array($entity_id), NULL, TRUE);
   $entity = reset($entities);
-  $status = ($entity->status == 1 ? 1 : 0);
+
   // Check if the mimetype is allowed
-  $status = $status & apachesolr_attachments_is_file($entity);
-  $status = $status & apachesolr_attachments_allowed_mime($entity->filemime);
-  $status = $status & apachesolr_attachments_excluded_entities($entity_id, $entity_type);
-  return $status;
+  if (apachesolr_attachments_allowed_mime($entity->filemime) == FALSE) {
+    return FALSE;
+  }
+  // Check if the entity status is active and if it is a real file
+  if ($entity->status != 1) {
+    return FALSE;
+  }
+  if (apachesolr_attachments_is_file($entity) == FALSE) {
+    return FALSE;
+  }
+
+  return TRUE;
 }
 
 function apachesolr_attachments_is_file($entity) {
@@ -278,7 +301,7 @@ function apachesolr_attachments_is_file($entity) {
  */
 function apachesolr_attachments_excluded_entities($entity_id, $entity_type) {
   $env_id = apachesolr_default_environment();
-  $status = TRUE;
+  $status = FALSE;
 
   $file = file_load($entity_id);
   $parents = file_get_file_references($file, NULL, FIELD_LOAD_CURRENT);
@@ -287,39 +310,37 @@ function apachesolr_attachments_excluded_entities($entity_id, $entity_type) {
   if (!empty($parents_list)) {
     foreach ($parents_list as $parent_entity_type => $parent) {
       foreach ($parent as $parent_entity_id => $parent_info) {
-        // load the parent entity and reset cache
-        $parent_entities = entity_load($parent_entity_type, array($parent_entity_id), NULL, TRUE);
-        // Take the first entity from the stack
-        $parent_entity = reset($parent_entities);
 
-        // Skip invalid entities
-        if (empty($parent_entity)) {
+        $bundles = apachesolr_get_index_bundles($env_id, $parent_entity_type);
+        // Ignore this parent if the bundles to be indexed for this entity type
+        // are not indexed
+        if (empty($bundles)) {
+          continue;
+        }
+        else if (!in_array($parent_info->type, $bundles)) {
           continue;
         }
 
-        // Retrieve the parent entity id
-        list($parent_entity_id) = entity_extract_ids($parent_entity_type, $parent_entity);
-
         // Skip indexing of files if the node was excluded by apache solr
         $status_callbacks = apachesolr_entity_get_callback($parent_entity_type, 'status callback');
-
-        // Check status callback before sending to the index
-        foreach ($status_callbacks as $status_callback) {
-          if (is_callable($status_callback)) {
-            // by placing $status in front we prevent calling any other callback
-            // after one status callback returned false
-            $status = $status && $status_callback($parent_entity_id, $parent_entity_type);
+        if (!empty($status_callbacks)) {
+          // Set status to true. Allow the callbacks to make the change
+          $status = TRUE;
+          // Check status callback before sending to the index
+          foreach ($status_callbacks as $status_callback) {
+            if (is_callable($status_callback)) {
+              // by placing $status in front we prevent calling any other callback
+              // after one status callback returned false
+              $status = $status && $status_callback($parent_entity_id, $parent_entity_type);
+            }
           }
-        }
-
-        // Delete the entity from our index if the status callback returns 0
-        if ($status == FALSE) {
-          // One exclusion is enough not to consider this attachment for indexing
-          apachesolr_remove_entity($env_id, $entity_type, $entity_id);
-          return FALSE;
         }
       }
     }
+  }
+  // Delete the entity from our index if the status callback returns 0
+  if ($status == FALSE) {
+    apachesolr_remove_entity($env_id, $entity_type, $entity_id);
   }
   return $status;
 }
@@ -483,8 +504,8 @@ function theme_apachesolr_search_snippets__file($vars) {
 
   // Retrieve our parent entities. They have been saved as
   // a small serialized entity
-  foreach ($doc->zm_parent_entity as $parent_entity_serialized) {
-    $parent_entity = unserialize($parent_entity_serialized);
+  foreach ($doc->zm_parent_entity as $parent_entity_encoded) {
+    $parent_entity = (object) drupal_json_decode($parent_entity_encoded);
     $parent_entity_uri = entity_uri($parent_entity->entity_type, $parent_entity);
     $parent_entity_uri['options']['absolute'] = TRUE;
     $parent_label = entity_label($parent_entity->entity_type, $parent_entity);
