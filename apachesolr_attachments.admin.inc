@@ -120,15 +120,36 @@ function apachesolr_attachments_index_action_form($form, &$form_state, $env_id) 
   );
   $form['action']['delete'] = array(
     '#prefix' => '<div>',
+    '#suffix' => '</div>',
     '#type' => 'submit',
     '#value' => t('Delete the attachments from the index'),
     '#submit' => array('apachesolr_attachments_index_action_form_delete_submit'),
+  );
+  $form['action']['extract'] = array(
+    '#prefix' => '<div>',
+    '#suffix' => '</div>',
+    '#type' => 'submit',
+    '#value' => t('Test your tika extraction'),
+    '#submit' => array('apachesolr_attachments_index_action_form_extraction_submit'),
   );
   return $form;
 }
 
 /**
- * Submit handler for the Indexer actions form, delete button.
+ * Submit handler for the Indexer actions form, test button.
+ */
+function apachesolr_attachments_index_action_form_extraction_submit($form, &$form_state) {
+  $destination = array();
+  if (isset($_GET['destination'])) {
+    $destination = drupal_get_destination();
+    unset($_GET['destination']);
+  }
+  $env_id = $form_state['values']['env_id'];
+  $form_state['redirect'] = array('admin/config/search/apachesolr/attachments/test', array('query' => $destination));
+}
+
+/**
+ * Submit handler for the Indexer actions form, reset button.
  */
 function apachesolr_attachments_index_action_form_reset_submit($form, &$form_state) {
   $destination = array();
@@ -201,6 +222,25 @@ function apachesolr_attachments_confirm_submit($form, &$form_state) {
       break;
   }
   $form_state['redirect'] = 'admin/config/search/apachesolr/attachments';
+}
+
+/**
+ * Function to test if our extracting with tika succeeds
+ */
+function apachesolr_attachments_test_tika_extraction() {
+  module_load_include('inc', 'apachesolr_attachments', 'apachesolr_attachments.index');
+  $file = new stdClass();
+  $file->uri = drupal_get_path('module', 'apachesolr_attachments') . '/tests/solr-word.pdf';
+  $file->filemime = 'text/pdf';
+  $text = apachesolr_attachments_get_attachment_text($file);
+  // Check if the text can be succesfully extracted
+  if (strpos($text, "This is a test of PDF and Word extraction in Solr")) {
+    drupal_set_message(t('Text can be succesfully extracted'));
+  }
+  else {
+    drupal_set_message(t('Text can not be succesfully extracted. Please check your settings'), 'error');
+  }
+  drupal_goto('admin/config/search/apachesolr/attachments');
 }
 
 /**

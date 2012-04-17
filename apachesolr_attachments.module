@@ -19,10 +19,9 @@ function apachesolr_attachments_menu() {
     'file' => 'apachesolr_attachments.admin.inc',
     'type' => MENU_LOCAL_TASK,
   );
-  $items['admin/config/search/apachesolr/attachments/confirm/reindex'] = array(
-    'title' => 'Reindex all files',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('apachesolr_attachments_confirm', 6),
+  $items['admin/config/search/apachesolr/attachments/test'] = array(
+    'title' => 'Test tika extraction',
+    'page callback' => 'apachesolr_attachments_test_tika_extraction',
     'access arguments' => array('administer search'),
     'file' => 'apachesolr_attachments.admin.inc',
     'type' => MENU_CALLBACK,
