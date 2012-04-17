@@ -4,6 +4,7 @@ Apache Solr Attachments x.x-x.x, xxxx-xx-xx
 
 Apache Solr Attachments 7.x-1.x, xxxx-xx-xx
 ------------------------------
+#1536760 by Nick_vh: Added a test button to verify your text extraction process. Follow up
 #1536760 by Nick_vh: Added a test button to verify your text extraction process.
 #1532008 by Nick_vh: Added Clean index table algorithm is needed.
 #1531988 by Nick_vh: Added Keep extracted text in cache longer. Even when re-index is issued.

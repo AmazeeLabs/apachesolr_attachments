@@ -232,12 +232,13 @@ function apachesolr_attachments_test_tika_extraction() {
   $indexer_table = apachesolr_get_indexer_table('file');
   // Create new file
   $file = new stdClass();
-  $file->uri = drupal_get_path('module', 'apachesolr_attachments') . '/tests/solr-word.pdf';
-  $file->filemime = 'text/pdf';
+  $file->uri = drupal_get_path('module', 'apachesolr_attachments') . '/tests/test-tika.pdf';
+  $file->filemime = 'application/pdf';
   $file->fid = 0;
   $text = apachesolr_attachments_get_attachment_text($file);
-  // Check if the text can be succesfully extracted
-  if (strpos($text, "This is a test of PDF and Word extraction in Solr")) {
+  // Check if the text can be succesfully extracted. Only checking 1 word is
+  // sufficient
+  if (strpos($text, 'extraction')) {
     drupal_set_message(t('Text can be succesfully extracted'));
   }
   else {
@@ -245,7 +246,7 @@ function apachesolr_attachments_test_tika_extraction() {
   }
   // Delete our test file from indexing table
   db_delete($indexer_table)->condition('entity_id', $file->fid)->execute();
-  
+
   drupal_goto('admin/config/search/apachesolr/attachments');
 }
 
