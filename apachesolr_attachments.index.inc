@@ -48,6 +48,7 @@ function apachesolr_attachments_allowed_mime($filemime) {
  * @throws Exception
  */
 function apachesolr_attachments_get_attachment_text($file) {
+  $indexer_table = apachesolr_get_indexer_table('file');
   if (!apachesolr_attachments_is_file($file)) {
     return FALSE;
   }
@@ -69,7 +70,7 @@ function apachesolr_attachments_get_attachment_text($file) {
     return FALSE;
   }
 
-  $indexer_table = apachesolr_get_indexer_table('file');
+
   $cached = db_query("SELECT * FROM {{$indexer_table}} WHERE entity_id = :entity_id", array(':entity_id' => $file->fid))->fetchAssoc();
 
   if (!is_null($cached['body']) && ($cached['hash'] == $hash)) {
@@ -97,7 +98,7 @@ function apachesolr_attachments_get_attachment_text($file) {
   $text = trim(apachesolr_clean_text($text));
 
   // Save the extracted, cleaned text to the DB.
-  db_update('apachesolr_index_entities_file')->fields(array('hash' => $hash, 'body' => $text))->condition('entity_id', $file->fid)->execute();
+  db_update($indexer_table)->fields(array('hash' => $hash, 'body' => $text))->condition('entity_id', $file->fid)->execute();
 
   return $text;
 }

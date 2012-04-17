@@ -74,6 +74,10 @@ function apachesolr_attachments_solr_document(ApacheSolrDocument $document, $fil
   $documents = array();
 
   $text = apachesolr_attachments_get_attachment_text($file);
+  // If we don't have extracted text we should stop our process here
+  if (empty($text)) {
+    return $documents;
+  }
   // Text is saved in the index table. Will be used by the node indexing if
   // available.
   // Function should exist that updates the changed data for a node when the
@@ -303,6 +307,10 @@ function apachesolr_attachments_excluded_entities($entity_id, $entity_type) {
   $status = FALSE;
 
   $file = file_load($entity_id);
+  // We can't do anything with a faulty file
+  if (empty($file)) {
+    return $status;
+  }
   $parents = file_get_file_references($file, NULL, FIELD_LOAD_CURRENT);
   $parents_list = $parents ? reset($parents) : NULL;
 

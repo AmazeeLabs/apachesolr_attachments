@@ -229,9 +229,12 @@ function apachesolr_attachments_confirm_submit($form, &$form_state) {
  */
 function apachesolr_attachments_test_tika_extraction() {
   module_load_include('inc', 'apachesolr_attachments', 'apachesolr_attachments.index');
+  $indexer_table = apachesolr_get_indexer_table('file');
+  // Create new file
   $file = new stdClass();
   $file->uri = drupal_get_path('module', 'apachesolr_attachments') . '/tests/solr-word.pdf';
   $file->filemime = 'text/pdf';
+  $file->fid = 0;
   $text = apachesolr_attachments_get_attachment_text($file);
   // Check if the text can be succesfully extracted
   if (strpos($text, "This is a test of PDF and Word extraction in Solr")) {
@@ -240,6 +243,9 @@ function apachesolr_attachments_test_tika_extraction() {
   else {
     drupal_set_message(t('Text can not be succesfully extracted. Please check your settings'), 'error');
   }
+  // Delete our test file from indexing table
+  db_delete($indexer_table)->condition('entity_id', $file->fid)->execute();
+  
   drupal_goto('admin/config/search/apachesolr/attachments');
 }
 
