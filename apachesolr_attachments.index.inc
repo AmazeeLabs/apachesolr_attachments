@@ -186,20 +186,26 @@ function apachesolr_attachments_extract_using_solr($filepath) {
  *
  */
 function apachesolr_attachments_add_file_usage(stdClass $file, $parent_entity_type, $parent_entity_id) {
-  $indexer_table = apachesolr_get_indexer_table('file');
-  db_merge($indexer_table)
-    ->key(array(
-      'entity_type' => 'file',
-      'entity_id' => $file->fid,
-      'parent_entity_type' => $parent_entity_type,
-      'parent_entity_id' => $parent_entity_id,
-    ))
-    ->fields(array(
-      'bundle' => 'file',
-      'status' => 1,
-      'changed' => REQUEST_TIME,
-    ))
-    ->execute();
+  // Only add this file type if the parent entity type can be indexed.
+  // Example : node is mostly indexed but media module is not. So
+  // exclude all media entities from being added
+  $entity_info = entity_get_info($parent_entity_type);
+  if (!empty($entity_info['apachesolr']['indexable'])) {
+    $indexer_table = apachesolr_get_indexer_table('file');
+    db_merge($indexer_table)
+      ->key(array(
+        'entity_type' => 'file',
+        'entity_id' => $file->fid,
+        'parent_entity_type' => $parent_entity_type,
+        'parent_entity_id' => $parent_entity_id,
+      ))
+      ->fields(array(
+        'bundle' => 'file',
+        'status' => 1,
+        'changed' => REQUEST_TIME,
+      ))
+      ->execute();
+  }
 }
 
 /**
@@ -226,7 +232,16 @@ function apachesolr_attachments_delete_file_usage(stdClass $file, $parent_entity
 
 function apachesolr_attachments_clean_index_table() {
   $indexer_table = apachesolr_get_indexer_table('file');
+  // Clean all entries where parent_entity_id is empty
   db_delete($indexer_table)
-    ->condition('parent_entity_id', 0)
-    ->execute();
+  ->condition('parent_entity_id', 0)
+  ->execute();
+  // Clean all entries from entity types that should not be indexed
+  foreach (entity_get_info() as $entity_type => $entity_info) {
+    if (empty($entity_info['apachesolr']['indexable'])) {
+       db_delete($indexer_table)
+      ->condition('parent_entity_type', $entity_type)
+      ->execute();
+    }
+  }
 }
