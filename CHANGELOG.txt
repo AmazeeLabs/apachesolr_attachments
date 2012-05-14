@@ -1,5 +1,6 @@
 Apache Solr Attachments 7.x-1.x, xxxx-xx-xx
 ------------------------------
+#1577670 by heacu: Fixed $entity_type() not defined in apachesolr_attachments_apachesolr_file_exclude().
 #1569406 by Stefan Freudenberg, heacu: Fixed Wrong relationship between files and nodes in apachesolr_index_entities_file().
 #1538212 by Nick_vh: Fixed use the exclude functionality instead of the status callback functionality.
 #1536760 by Nick_vh: Added a test button to verify your text extraction process. Follow up

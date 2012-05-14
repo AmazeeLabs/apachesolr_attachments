@@ -287,7 +287,6 @@ function apachesolr_attachments_status_callback($entity_id, $entity_type) {
  * index. if any module returns TRUE, the entity is skipped for indexing.
  *
  * @param integer $entity_id
- * @param string $entity_type
  * @param integer $row
  *   A complete set of data from the indexing table.
  * @param string $env_id
@@ -304,7 +303,7 @@ function apachesolr_attachments_apachesolr_file_exclude($entity_id, $row, $env_i
   // Check if the parent entity is excluded
   $parent_entity_id = $row->parent_entity_id;
   $parent_entity_type = $row->parent_entity_type;
-  $exclude = apachesolr_attachments_is_parent_excluded($entity_id, $entity_type, $parent_entity_id, $parent_entity_type, $env_id);
+  $exclude = apachesolr_attachments_is_parent_excluded($entity_id, 'file', $parent_entity_id, $parent_entity_type, $env_id);
   if ($exclude) {
     // Exclude
     return TRUE;
