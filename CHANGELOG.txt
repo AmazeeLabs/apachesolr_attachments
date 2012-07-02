@@ -1,5 +1,8 @@
-Apache Solr Attachments 7.x-1.x, xxxx-xx-xx
+Apache Solr Attachments 7.x-1.1, xxxx-xx-xx
 ------------------------------
+#1580100 by ryantollefson: Fixed Typo in readme.txt.
+#1612164 by tauno: Fixed Errors when saving entities without bundles.
+#1663298 + #1606978 + #1651260 Media support + some errors on comment entity + improved algorithm
 #1566252 by netw3rker: Fixed Fatal error: Call to undefined function apachesolr_attachments_solr_reindex() .
 #1577670 by heacu: Fixed $entity_type() not defined in apachesolr_attachments_apachesolr_file_exclude().
 #1569406 by Stefan Freudenberg, heacu: Fixed Wrong relationship between files and nodes in apachesolr_index_entities_file().
