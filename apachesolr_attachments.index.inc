@@ -153,7 +153,7 @@ function apachesolr_attachments_extract_using_solr($filepath) {
     'extractFormat' => 'text', // Matches the -t command for the tika CLI app.
   );
   // Construct a multi-part form-data POST body in $data.
-  $boundary = '--' . md5(uniqid(REQUEST_TIME));
+  $boundary = '--' . hash('sha256', uniqid(REQUEST_TIME));
   $data = "--{$boundary}\r\n";
   // The 'filename' used here becomes the property name in the response.
   $data .= 'Content-Disposition: form-data; name="file"; filename="extracted"';
@@ -185,12 +185,15 @@ function apachesolr_attachments_extract_using_solr($filepath) {
  *   (optional) The number of references to add to the object. Defaults to 1.
  *
  */
-function apachesolr_attachments_add_file_usage(stdClass $file, $parent_entity_type, $parent_entity_id) {
+function apachesolr_attachments_add_file_usage(stdClass $stub_file, $parent_entity_type, $parent_entity_id) {
   // Only add this file type if the parent entity type can be indexed.
   // Example : node is mostly indexed but media module is not. So
   // exclude all media entities from being added
   $entity_info = entity_get_info($parent_entity_type);
   if (!empty($entity_info['apachesolr']['indexable'])) {
+    // We do have to load the file, because there is no way to get the
+    // bundle type, and media adds many bundles, so fixing this here
+    $file = file_load($stub_file->fid);
     $indexer_table = apachesolr_get_indexer_table('file');
     db_merge($indexer_table)
       ->key(array(
@@ -200,11 +203,10 @@ function apachesolr_attachments_add_file_usage(stdClass $file, $parent_entity_ty
         'parent_entity_id' => $parent_entity_id,
       ))
       ->fields(array(
-        'bundle' => 'file',
-        'status' => 1,
+        'bundle' => $file->type,
+        'status' => $file->status,
         'changed' => REQUEST_TIME,
-      ))
-      ->execute();
+      ))->execute();
   }
 }
 

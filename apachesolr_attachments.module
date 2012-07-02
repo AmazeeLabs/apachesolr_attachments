@@ -188,7 +188,7 @@ function apachesolr_attachments_solr_reindex() {
       foreach ($parent_entities as $parent_entity_info) {
         // Fake our file class
         $file = new stdClass();
-        $file->fid = $parent_entity_info->file_fid;
+        $file->fid = $parent_entity_info->extraFields->field_file_fid;
         list ($parent_entity_id) = entity_extract_ids($parent_entity_type, $parent_entity_info);
         apachesolr_attachments_add_file_usage($file, $parent_entity_type, $parent_entity_id);
       }
@@ -196,7 +196,7 @@ function apachesolr_attachments_solr_reindex() {
   }
   catch (Exception $e) {
     $transaction->rollback();
-    //drupal_set_message($e->getMessage(), 'error');
+    drupal_set_message($e->getMessage(), 'error');
     watchdog_exception('Apache Solr Attachments', $e);
     return FALSE;
   }
@@ -225,8 +225,8 @@ function _apachesolr_attachments_get_all_files() {
         $results_query = $query
           ->entityCondition('entity_type', $entity_type)
           ->fieldCondition($field_info['field_name'])
-          ->addTag('apachesolr_attachments_solr_reindex')
-          ->addMetaData('field_fid_key', $field_info['field_name'] . '_fid')
+          // Fetch all file ids related to the entities
+          ->addExtraField($field_info['field_name'], 'fid', 'fid')
           ->execute();
         $results = array_merge_recursive($results, $results_query);
 
@@ -234,18 +234,6 @@ function _apachesolr_attachments_get_all_files() {
     }
   }
   return $results;
-}
-
-/*
- * Implements hook_query_TAG_alter().
- *
- * Add our file id to the result set
- */
-function apachesolr_attachments_query_apachesolr_attachments_solr_reindex_alter(QueryAlterableInterface $query) {
-  // We are sure that entity_id is available. Take that table and
-  // add our fid key
-  $fields = $query->getFields();
-  $query->addField($fields['entity_id']['table'], $query->getMetaData('field_fid_key'), $query->getMetaData('field_fid_key'));
 }
 
 /**
@@ -260,7 +248,6 @@ function apachesolr_attachments_status_callback($entity_id, $entity_type) {
   // load the entity and reset cache
   $entities = entity_load($entity_type, array($entity_id), NULL, TRUE);
   $entity = reset($entities);
-
   // Check if the mimetype is allowed
   if (apachesolr_attachments_allowed_mime($entity->filemime) == FALSE) {
     // Set status to 0 and remove from the index
@@ -348,8 +335,12 @@ function apachesolr_attachments_is_parent_excluded($entity_id, $entity_type, $pa
     // Parent entity id does not exist anymore
     return TRUE;
   }
-  $result = reset(reset($result));
-  $parent_entity_bundle = $result->type;
+  $values = array_values($result[$parent_entity_type]);
+  // Since we only expect 1 eid to return, we are going to do
+  // a reset of the array
+  $stub_entity = reset($values);
+
+  $parent_entity_bundle = $stub_entity->type;
   // Ignore this parent if the bundles to be indexed for this entity type
   // are not indexed
   $bundles = apachesolr_get_index_bundles($env_id, $parent_entity_type);
@@ -477,22 +468,30 @@ function apachesolr_attachments_field_attach_update($parent_entity_type, $parent
 }
 
 function apachesolr_attachments_field_attach_delete($parent_entity_type, $parent_entity) {
-  foreach (field_info_instances($parent_entity_type, $parent_entity->type) as $instance) {
-    $field_info = field_info_field($instance['field_name']);
-    if ($field_info['type'] == 'file') {
-      // Include the file after the if, otherwise it'll get included everywhere
-      module_load_include('inc', 'apachesolr_attachments', 'apachesolr_attachments.index');
+  // Not all entities sent through this function have the same
+  // syntax and/or content. We only check entities that have a type.
+  // This excludes comments, so if there would be a file entity atttached to
+  // a comment, this would not be picked up.
+  // TODO: If you are a entity magician, please improve
+  if (isset($parent_entity->type)) {
+    // Check if the deleted entity had a file attached
+    foreach (field_info_instances($parent_entity_type, $parent_entity->type) as $instance) {
+      $field_info = field_info_field($instance['field_name']);
+      if ($field_info['type'] == 'file') {
+        // Include the file after the if, otherwise it'll get included everywhere
+        module_load_include('inc', 'apachesolr_attachments', 'apachesolr_attachments.index');
 
-      $items = field_get_items($parent_entity_type, $parent_entity, $field_info['field_name']);
-      foreach ($items as $file_info) {
-        $file = file_load($file_info['fid']);
-        // Discard empty entities
-        if (empty($file)) {
-          continue;
+        $items = field_get_items($parent_entity_type, $parent_entity, $field_info['field_name']);
+        foreach ($items as $file_info) {
+          $file = file_load($file_info['fid']);
+          // Discard empty entities
+          if (empty($file)) {
+            continue;
+          }
+          // Retrieve parent entity id and delete its file usage
+          list($parent_entity_id) = entity_extract_ids($parent_entity_type, $parent_entity);
+          apachesolr_attachments_delete_file_usage($file, $parent_entity_type, $parent_entity_id);
         }
-        // Retrieve parent entity id and delete its file usage
-        list($parent_entity_id) = entity_extract_ids($parent_entity_type, $parent_entity);
-        apachesolr_attachments_delete_file_usage($file, $parent_entity_type, $parent_entity_id);
       }
     }
   }
@@ -572,7 +571,10 @@ function apachesolr_attachments_default_excluded() {
 }
 
 class ApachesolrAttachmentsEntityFieldQuery extends EntityFieldQuery {
- /**
+  // Extra added fields to the query
+  private $addedFields = array();
+
+  /**
   * Finishes the query.
   *
   * Adds tags, metaData, range and returns the requested list or count.
@@ -601,14 +603,38 @@ class ApachesolrAttachmentsEntityFieldQuery extends EntityFieldQuery {
       return $select_query->countQuery()->execute()->fetchField();
     }
     $return = array();
+
+    foreach($this->addedFields as $addedField) {
+      $fields = $select_query->getFields();
+      if (!empty($addedField['field_name'])) {
+        $column = $addedField['field_name'] . '_' . $addedField['column'];
+        $column_alias = $addedField['field_name'] . '_' . $addedField['column_alias'];
+      }
+      else {
+        $column = $addedField['column'];
+        $column_alias = $addedField['column_alias'];
+      }
+      $select_query->addField($fields['entity_id']['table'], $column, $column_alias);
+    }
+
+
     foreach ($select_query->execute() as $partial_entity) {
       $bundle = isset($partial_entity->bundle) ? $partial_entity->bundle : NULL;
       $entity = entity_create_stub_entity($partial_entity->entity_type, array($partial_entity->entity_id, $partial_entity->revision_id, $bundle));
       // This is adding the file id using our metaData field.
-      $entity->file_fid = $partial_entity->{$this->metaData['field_fid_key']};
+      $entity->extraFields = $partial_entity;
+      //$entity->file_fid = $partial_entity->{$this->metaData['field_key']};
       $return[$partial_entity->entity_type][$partial_entity->$id_key] = $entity;
       $this->ordered_results[] = $partial_entity;
     }
     return $return;
+  }
+  public function addExtraField($field_name, $column, $column_alias = NULL) {
+    $this->addedFields[] = array(
+      'field_name' => $field_name,
+      'column' => $column,
+      'column_alias' => $column_alias,
+    );
+    return $this;
   }
 }
