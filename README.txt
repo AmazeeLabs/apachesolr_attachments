@@ -6,15 +6,15 @@ or access to a solr server set up for content extraction (e.g. a Solr
 1.4 final release).  For Solr, there is a patch to apply to the solrconfig
 to add another request handler.
 
-see:  
+see:
 http://lucene.apache.org/tika/gettingstarted.html
 http://lucene.apache.org/tika/formats.html
 
 Tika will extract many file formats, including PDFs, MS Office (2003 format
 as well as new docx format).  Java 6 (aka 1.6) may be needed on some
-platforms to support all formats.  The page on formats seems not to be 100% 
+platforms to support all formats.  The page on formats seems not to be 100%
 up to date.  In particular, https://issues.apache.org/jira/browse/TIKA-152
-is committed, so it does currently support MS Office 2007 documents to 
+is committed, so it does currently support MS Office 2007 documents to
 some reasonable degee.
 
 The easiest-to-find pre-built Tika app is available from the download page:
@@ -29,7 +29,7 @@ Solr 1.4.1 uses tika 0.4, 1.4.2-dev uses tika 0.7, and Solr 3.5.0 uses 0.10,
 and newer releases of Sorl are likey to use 1.1+.  Note that the version
 numbering changed, so 0.1 was followed by 1.0 and 1.1.
 
-If youy need to build tika from source using maven (mvn).  Get the tika
+If you need to build tika from source using maven (mvn).  Get the tika
 source from:
 http://lucene.apache.org/tika/download.html
 
@@ -45,8 +45,8 @@ Copy tika-app-1.1.jar from there or point the module path to it.
 
 See also build instructions at: http://drupal.org/node/540974#comment-1944082
 
-If you are using Solr to extract your content, you need to copy (or symlink) 
-the contents of contrib/extraction/lib to a directory named lib under your 
+If you are using Solr to extract your content, you need to copy (or symlink)
+the contents of contrib/extraction/lib to a directory named lib under your
 solr home, or alter solrconfig.xml to add the orgiginal directory as a
 lib directory.
 
