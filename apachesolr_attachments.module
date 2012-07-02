@@ -453,7 +453,6 @@ function apachesolr_attachments_field_attach_update($parent_entity_type, $parent
   // TODO: If you are a entity magician, please improve
   if (isset($parent_entity->type)) {
     // Check if the deleted entity had a file attached
-
     foreach (field_info_instances($parent_entity_type, $parent_entity->type) as $instance) {
       $field_info = field_info_field($instance['field_name']);
       if ($field_info['type'] == 'file') {
