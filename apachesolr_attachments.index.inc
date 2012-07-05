@@ -195,6 +195,12 @@ function apachesolr_attachments_add_file_usage(stdClass $stub_file, $parent_enti
     // bundle type, and media adds many bundles, so fixing this here
     $file = file_load($stub_file->fid);
     $indexer_table = apachesolr_get_indexer_table('file');
+    // For non-media files there is no such thing as a defined type/bundle
+    // Define it here, so we can have a seamless integration between media and
+    // non-media
+    if (empty($file->type)) {
+      $file->type = 'file';
+    }
     db_merge($indexer_table)
       ->key(array(
         'entity_type' => 'file',

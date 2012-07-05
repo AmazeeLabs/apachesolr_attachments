@@ -1,4 +1,8 @@
-Apache Solr Attachments 7.x-1.1, xxxx-xx-xx
+Apache Solr Attachments 7.x-1.x-dev, xxxx-xx-xx
+------------------------------
+#1669728 by Nick_vh | kevinlabory: Fixed 'Clear the attachment text extraction cache" issue .
+
+Apache Solr Attachments 7.x-1.1, 2012-07-03
 ------------------------------
 #1580100 by ryantollefson: Fixed Typo in readme.txt.
 #1612164 by tauno: Fixed Errors when saving entities without bundles.
