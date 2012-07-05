@@ -578,7 +578,7 @@ function theme_apachesolr_search_snippets__file($vars) {
  *   An array of file extensions.
  */
 function apachesolr_attachments_default_excluded() {
-  $default = array('aif', 'art', 'avi', 'bmp', 'gif', 'ico', 'jpg', 'mov', 'mp3', 'mp4', 'mpg', 'oga', 'ogv', 'png', 'psd', 'ra', 'ram', 'rgb', 'tif');
+  $default = array('aif', 'art', 'avi', 'bmp', 'gif', 'ico', 'jpg', 'mov', 'mp3', 'mp4', 'mpg', 'oga', 'ogv', 'png', 'psd', 'ra', 'ram', 'rgb', 'tif', 'wmv');
   return $default;
 }
 
