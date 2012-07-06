@@ -242,19 +242,21 @@ function apachesolr_attachments_update_7003() {
       'indexes' => array(
         'changed' => array('changed', 'status'),
       ),
-      'primary key' => array('entity_id'),
+      'primary key' => array('entity_id', 'parent_entity_id'),
     );
     if (!db_table_exists($table)) {
       db_create_table('apachesolr_index_entities_file', $schema[$table]);
     }
   }
-
-  // Repopulate our file table
-  apachesolr_attachments_solr_reindex();
-
+  // Sleep 1 second, so the table is initialized before we continue.
+  // See #1672768
+  sleep(1);
   // Remove old variables
   variable_del('apachesolr_attachments_exclude_types');
   variable_del('apachesolr_attachments_cron_limit');
   variable_del('apachesolr_attachments_cron_time_limit');
   variable_del('apachesolr_attachments_cron_try');
+
+  // Repopulate our file table
+  apachesolr_attachments_solr_reindex();
 }

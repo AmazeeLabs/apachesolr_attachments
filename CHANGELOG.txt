@@ -1,5 +1,6 @@
 Apache Solr Attachments 7.x-1.x-dev, xxxx-xx-xx
 ------------------------------
+#1672768 by Nick_vh | pjcdawkins: Fixed apachesolr_attachments_update_7003() gives unknown column error.
 #1632474 by Nick_vh | ensemblevide: Search results : no files appear.
 #1669728 by Nick_vh | kevinlabory: Fixed 'Clear the attachment text extraction cache" issue .
 
