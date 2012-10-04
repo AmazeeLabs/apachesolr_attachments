@@ -88,7 +88,7 @@ function apachesolr_attachments_get_attachment_text($file) {
     }
     catch (Exception $e) {
       // Exceptions from Solr may be transient, or indicate a problem with a specific file.
-      watchdog('Apache Solr Attachments', "Exception occurred sending %filepath to Solr\n!message", array('%filepath' => $file->uri, '!message' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
+      watchdog('Apache Solr Attachments', "Exception occurred sending %filepath to Solr\n!message", array('%filepath' => $filepath, '!message' => nl2br(check_plain($e->getMessage()))), WATCHDOG_ERROR);
       return FALSE;
     }
   }
