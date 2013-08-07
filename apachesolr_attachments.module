@@ -168,7 +168,11 @@ function apachesolr_attachments_solr_document(ApacheSolrDocument $document, $fil
       $small_parent_entity->{$parent_entity_info['entity keys']['id']} = $parent_entity_id;
 
       $small_parent_entity->{$parent_entity_info['entity keys']['bundle']} = $parent_entity_bundle;
-      $small_parent_entity->{$parent_entity_info['entity keys']['label']} = $parent_entity->{$parent_entity_info['entity keys']['label']};
+
+     // Not all entities has entity key label set, so it should be checked first to avoid errors.
+     if (isset($parent_entity_info['entity keys']['label'])) {
+       $small_parent_entity->{$parent_entity_info['entity keys']['label']} = $parent_entity->{$parent_entity_info['entity keys']['label']};
+     }
 
       // Add all to one field because if it is spread out over
       // multiple fields there is no way of knowing which multifield value
@@ -675,16 +679,24 @@ function apachesolr_attachments_theme() {
  */
 function theme_apachesolr_search_snippets__file($vars) {
   $doc = $vars['doc'];
-  $snippets = $vars['snippets'];
+  $snippets = $vars['snippets']['content'];
   $parent_entity_links = array();
 
   // Retrieve our parent entities. They have been saved as
   // a small serialized entity
   foreach ($doc->zm_parent_entity as $parent_entity_encoded) {
-    $parent_entity = (object) drupal_json_decode($parent_entity_encoded);
-    $parent_entity_uri = entity_uri($parent_entity->entity_type, $parent_entity);
+    $parent_decoded = (object) drupal_json_decode($parent_entity_encoded);
+
+    // Extract entity id from parent. List fetches the first item from the array.
+    list($id) = entity_extract_ids($parent_decoded->entity_type, $parent_decoded);
+
+    // Load parent entity
+    $load = entity_load($parent_decoded->entity_type, array($id));
+    $parent_entity = array_shift($load);
+
+    $parent_entity_uri = entity_uri($parent_decoded->entity_type, $parent_entity);
     $parent_entity_uri['options']['absolute'] = TRUE;
-    $parent_label = entity_label($parent_entity->entity_type, $parent_entity);
+    $parent_label = entity_label($parent_decoded->entity_type, $parent_entity);
     $parent_entity_links[] = l($parent_label, $parent_entity_uri['path'], $parent_entity_uri['options']);
   }
 
