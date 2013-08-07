@@ -671,6 +671,16 @@ function apachesolr_attachments_theme() {
   );
 }
 
+/**
+ * Preprocess function for theme_apachesolr_search_snippets__file().
+ */
+function apachesolr_attachments_preprocess_apachesolr_search_snippets__file(&$vars) {
+  // Call the standard preprocess function for search snippets so that
+  // $vars['flattened_snippets'] will be defined.
+  // @todo This assumes apachesolr_search.module is enabled, but it's not
+  //likely this theme function will ever be called if it isn't.
+  apachesolr_search_preprocess_apachesolr_search_snippets($vars);
+}
 
 /**
  * @todo Vastly improve this theming function
@@ -679,7 +689,7 @@ function apachesolr_attachments_theme() {
  */
 function theme_apachesolr_search_snippets__file($vars) {
   $doc = $vars['doc'];
-  $snippets = $vars['snippets']['content'];
+  $snippets = $vars['flattened_snippets'];
   $parent_entity_links = array();
 
   // Retrieve our parent entities. They have been saved as
