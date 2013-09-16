@@ -812,7 +812,7 @@ class ApachesolrAttachmentsEntityFieldQuery extends EntityFieldQuery {
       // This is adding the file id using our metaData field.
       $entity->extraFields = $partial_entity;
       //$entity->file_fid = $partial_entity->{$this->metaData['field_key']};
-      $return[$partial_entity->entity_type][$partial_entity->$id_key] = $entity;
+      $return[$partial_entity->entity_type][$partial_entity->$id_key . '_' . $partial_entity->$column] = $entity;
       $this->ordered_results[] = $partial_entity;
     }
     return $return;
