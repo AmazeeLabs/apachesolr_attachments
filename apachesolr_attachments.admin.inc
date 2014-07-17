@@ -124,7 +124,14 @@ function apachesolr_attachments_entity_bundle_settings() {
     }
   }
 
-  return system_settings_form($form);
+  if (empty($form)) {
+    // Display a message if there are no indexable bundles.
+    $form['no_bundles']['#markup'] = t('There are no bundles indexable by Apache Solr. You can select entities and bundles that should be indexed via <a href="!url">the Apache Solr search settings</a> page.', array('!url' => url('admin/config/search/apachesolr')));
+    return $form;
+  }
+  else {
+    return system_settings_form($form);
+  }
 }
 
 /**
