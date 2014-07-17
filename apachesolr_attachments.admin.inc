@@ -47,6 +47,13 @@ function apachesolr_attachments_settings($form, &$form_state, $env_id) {
     '#description' => t("Extraction will be faster if run locally using tika."),
     '#default_value' => variable_get('apachesolr_attachments_extract_using', 'tika'),
   );
+  $form['apachesolr_attachments_filesize_limit'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Filesize limit (in bytes) for files to be indexed'),
+    '#size' => 80,
+    '#description' => t('If a file is larger than this limit, do not index it. Default is 40MB'),
+    '#default_value' => variable_get('apachesolr_attachments_filesize_limit', '40'),
+  );
   $form['apachesolr_attachments_tika_path'] = array(
     '#type' => 'textfield',
     '#title' => t('Tika directory path'),
@@ -80,6 +87,9 @@ function apachesolr_attachments_settings_validate($form, &$form_state) {
     if (!file_exists($path . '/' . $form_state['values']['apachesolr_attachments_tika_jar'])) {
       form_set_error('apachesolr_attachments_tika_path', t('Tika jar file not found at this path.'));
     }
+  }
+  if (!is_numeric($form_state['values']['apachesolr_attachments_filesize_limit'])) {
+    form_set_error('apachesolr_attachments_filesize_limit', t('Filesize limit must be a number.'));
   }
 }
 
