@@ -3,7 +3,4 @@ description = Search file attachments with Solr
 dependencies[] = apachesolr
 package = Search Toolkit
 core = 7.x
-
-files[] = apachesolr_attachments.admin.inc
-files[] = apachesolr_attachments.install
-files[] = apachesolr_attachments.module
+configure = admin/config/search/apachesolr/attachments
