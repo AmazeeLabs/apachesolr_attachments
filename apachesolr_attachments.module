@@ -484,7 +484,6 @@ function apachesolr_attachments_remove_attachments_from_index($parent_entity_typ
     list($parent_entity_id, $parent_entity_vid, $parent_entity_bundle) = entity_extract_ids($parent_entity_type, $parent_entity);
     $solr = apachesolr_get_solr();
     $solr->deleteByQuery("sm_parent_entity:{$parent_entity_type}-{$parent_entity_bundle}-{$parent_entity_id} AND entity_type:file AND hash:" . apachesolr_site_hash());
-    $solr->commit();
     return TRUE;
   }
   catch (Exception $e) {

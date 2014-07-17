@@ -290,7 +290,6 @@ function apachesolr_attachments_delete_index() {
   try {
     $solr = apachesolr_get_solr();
     $solr->deleteByQuery("entity_type:file AND hash:" . apachesolr_site_hash());
-    $solr->commit();
     module_load_include('inc', 'apachesolr', 'apachesolr.index');
     apachesolr_attachments_solr_reindex();
     return TRUE;
