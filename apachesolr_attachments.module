@@ -242,7 +242,7 @@ function apachesolr_attachments_node_solr_document(ApacheSolrDocument &$document
             if ($status) {
               $text = apachesolr_attachments_get_attachment_text($file);
               // append extracted text to index content field
-              $document->content .= $text;
+              $document->content .= apachesolr_clean_text($file->filename) . ' ' . $text;
             }
           }
         }
