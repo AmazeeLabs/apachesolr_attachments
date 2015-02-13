@@ -390,7 +390,7 @@ function apachesolr_attachments_apachesolr_file_exclude($entity_id, $row, $env_i
   }
 
   // Exclude files above the configured limit.
-  $filesize_limit = variable_get('apachesolr_attachments_filesize_limit', '40');
+  $filesize_limit = variable_get('apachesolr_attachments_filesize_limit', '41943040');
   // load the entity.
   $entities = entity_load('file', array($entity_id), NULL, TRUE);
   // Take the first item.

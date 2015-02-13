@@ -49,10 +49,10 @@ function apachesolr_attachments_settings($form, &$form_state, $env_id) {
   );
   $form['apachesolr_attachments_filesize_limit'] = array(
     '#type' => 'textfield',
-    '#title' => t('Filesize limit (in bytes) for files to be indexed'),
-    '#size' => 80,
-    '#description' => t('If a file is larger than this limit, do not index it. Default is 40MB'),
-    '#default_value' => variable_get('apachesolr_attachments_filesize_limit', '40'),
+    '#title' => t('File size limit (in bytes) for files to be indexed'),
+    '#size' => 10,
+    '#description' => t('If a file is larger than this limit, do not index it. Default is 41943040 bytes (40MB).'),
+    '#default_value' => variable_get('apachesolr_attachments_filesize_limit', '41943040'),
   );
   $form['apachesolr_attachments_tika_path'] = array(
     '#type' => 'textfield',
@@ -89,7 +89,7 @@ function apachesolr_attachments_settings_validate($form, &$form_state) {
     }
   }
   if (!is_numeric($form_state['values']['apachesolr_attachments_filesize_limit'])) {
-    form_set_error('apachesolr_attachments_filesize_limit', t('Filesize limit must be a number.'));
+    form_set_error('apachesolr_attachments_filesize_limit', t('File size limit must be a number (in bytes).'));
   }
 }
 
