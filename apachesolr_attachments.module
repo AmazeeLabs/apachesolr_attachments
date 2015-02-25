@@ -142,6 +142,13 @@ function apachesolr_attachments_solr_document(ApacheSolrDocument $document, $fil
       // Take the top document from the stack
       $filedocument = reset($build_documents);
 
+      // Add node access grants from the parent node to the file so that files
+      // are appropriately shown or filtered out of search results based on
+      // whether the user can access the node they are attached to.
+      if ($parent_entity_type == 'node' && function_exists('apachesolr_access_apachesolr_index_document_build_node')) {
+        apachesolr_access_apachesolr_index_document_build_node($filedocument, $parent_entity, $env_id);
+      }
+
       // Build our separate document and overwrite basic information
       $filedocument->id = apachesolr_document_id($file->fid . '-' . $parent_entity_id, $entity_type);
       $filedocument->url = file_create_url($file->uri);
