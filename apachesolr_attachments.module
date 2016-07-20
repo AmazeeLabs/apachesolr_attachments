@@ -448,23 +448,26 @@ function apachesolr_attachments_is_parent_excluded($entity_id, $entity_type, $pa
     // Parent entity id does not exist anymore
     return TRUE;
   }
-  $values = array_values($result[$parent_entity_type]);
-  // Since we only expect 1 eid to return, we are going to do
-  // a reset of the array
-  $stub_entity = reset($values);
-
-  $parent_entity_bundle = $stub_entity->type;
-  // Ignore this parent if the bundles to be indexed for this entity type
-  // are not indexed
-  $bundles = apachesolr_get_index_bundles($env_id, $parent_entity_type);
-  if (empty($bundles)) {
-    // Exclude it
-    return TRUE;
-  }
-  else if (!in_array($parent_entity_bundle, $bundles)) {
-    // Exclude it
-    return TRUE;
-  }
+  // According to https://jira.amazeelabs.com/browse/SOWEB-1291 we do not want
+  // to exclude the files for which the parent node is not indexed because of
+  // its type.
+//  $values = array_values($result[$parent_entity_type]);
+//  // Since we only expect 1 eid to return, we are going to do
+//  // a reset of the array
+//  $stub_entity = reset($values);
+//
+//  $parent_entity_bundle = $stub_entity->type;
+//  // Ignore this parent if the bundles to be indexed for this entity type
+//  // are not indexed
+//  $bundles = apachesolr_get_index_bundles($env_id, $parent_entity_type);
+//  if (empty($bundles)) {
+//    // Exclude it
+//    return TRUE;
+//  }
+//  else if (!in_array($parent_entity_bundle, $bundles)) {
+//    // Exclude it
+//    return TRUE;
+//  }
 
   // Skip indexing of files if the node was excluded by apache solr
   $status_callbacks = apachesolr_entity_get_callback($parent_entity_type, 'status callback');
